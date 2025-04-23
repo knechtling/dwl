@@ -112,12 +112,6 @@ typedef union {
 } Arg;
 
 typedef struct {
-  struct wl_list link;
-  struct wl_resource *resource;
-  Monitor *mon;
-} DwlIpcOutput;
-
-typedef struct {
   unsigned int click;
   unsigned int mod;
   unsigned int button;
@@ -528,13 +522,6 @@ static struct wl_event_source *menu_source;
 
 static Rule *drules;
 static size_t druleslen;
-
-static struct zdwl_ipc_manager_v2_interface dwl_manager_implementation = {.release = dwl_ipc_manager_release,
-                                                                          .get_output = dwl_ipc_manager_get_output};
-static struct zdwl_ipc_output_v2_interface dwl_output_implementation = {.release = dwl_ipc_output_release,
-                                                                        .set_tags = dwl_ipc_output_set_tags,
-                                                                        .set_layout = dwl_ipc_output_set_layout,
-                                                                        .set_client_tags = dwl_ipc_output_set_client_tags};
 
 static struct zdwl_ipc_manager_v2_interface dwl_manager_implementation = {.release = dwl_ipc_manager_release,
                                                                           .get_output = dwl_ipc_manager_get_output};
