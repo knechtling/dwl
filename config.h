@@ -189,8 +189,8 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
     // {MODKEY, XKB_KEY_F6, spawn, {.v = (const char *[]){"torwrap", NULL}}},
-    // {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode",
-    // NULL}}}, {MODKEY, XKB_KEY_F8, spawn, {.v = (const char *[]){"maimpick",
+    // {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode", NULL}}},
+    {MODKEY, XKB_KEY_F8, spawn, {.v = (const char *[]){"maimpick-wl", NULL}}},
     // NULL}}}, {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = (const
     // char *[]){"ss-uni", NULL}}}, {MODKEY, XKB_KEY_F9, spawn, {.v = (const
     // char *[]){"mounter", NULL}}}, {MODKEY, XKB_KEY_F10, spawn, {.v = (const
