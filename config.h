@@ -183,6 +183,7 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
+    {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
     // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
