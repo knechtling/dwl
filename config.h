@@ -200,9 +200,10 @@ static const Key keys[] = {
     // SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings "
     // "--profile=low-latency --input-conf=/dev/null --title=webcam $(ls "
     // "/dev/video[0,2,4,6,8] | tail -n 1)")},
-
-    // media keybinds
-    {MODKEY, XKB_KEY_minus, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")},
+    {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){"foot", "-e", "pkg-install", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){"foot", "-e", "pkg-remove", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
+    {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
     {MODKEY, XKB_KEY_plus, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%+")},
