@@ -53,10 +53,9 @@ static const Menu menus[] = {
 static const Rule rules[] = {
     /* app_id             title         tags mask     isfloating   monitor
        scratchkey */
-    /* examples: */
-    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0},         /* Start on currently visible tags floating, not tiled */
-    {"firefox_EXAMPLE", NULL, 1 << 8, 0, -1, 0}, /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'},         {NULL, "bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
+    {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
+    {NULL, "scratchpad", 0, 1, -1, 's'}, {"bitwarden", NULL, 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
