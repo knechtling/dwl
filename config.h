@@ -13,7 +13,7 @@ static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will 
 static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
 static int gaps = 1;                            /* 1 means gaps between windows are added */
 static const unsigned int gappx = 10;           /* gap pixel between windows */
-static const unsigned int borderpx = 1;         /* border pixel of windows */
+static const unsigned int borderpx = 2;         /* border pixel of windows */
 static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const int showsystray = 1;               /* 0 means no systray */
 static const int showbar = 1;                   /* 0 means no bar */
@@ -26,7 +26,7 @@ static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* You can also u
 static uint32_t colors[][3] = {
     /*               fg          bg          border    */
     [SchemeNorm] = {0xbbbbbbff, 0x222222ff, 0x444444ff},
-    [SchemeSel] = {0xeeeeeeff, 0x005577ff, 0x005577ff},
+    [SchemeSel] = {0xeeeeeeff, 0x005577ff, 0x0066ccff},
     [SchemeUrg] = {0, 0, 0x770000ff},
 };
 
