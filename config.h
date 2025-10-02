@@ -86,9 +86,6 @@ static const MonitorRule monrules[] = {
 /* keyboard */
 static const struct xkb_rule_names xkb_rules = {
     /* can specify fields: rules, model, layout, variant, options */
-    /* example:
-    .options = "ctrl:nocaps",
-    */
     .rules = NULL,           // use default
     .model = "pc105",        // common keyboard model
     .layout = "de",          // German layout
