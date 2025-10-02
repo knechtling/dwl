@@ -231,18 +231,18 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_D, incnmaster, {.i = -1}},
     {MODKEY, XKB_KEY_h, setmfact, {.f = -0.05f}},
     {MODKEY, XKB_KEY_l, setmfact, {.f = +0.05f}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_space, {0}},
+    {MODKEY, XKB_KEY_space, zoom, {0}},
     {MODKEY, XKB_KEY_Tab, view, {0}},
     {MODKEY, XKB_KEY_g, togglegaps, {0}},
     {MODKEY, XKB_KEY_q, killclient, {0}},
     {MODKEY, XKB_KEY_y, togglefullscreen, {0}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F, setruleisfloating, {0}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F, togglefloating, {0}},
     // layouts
     {MODKEY, XKB_KEY_t, setlayout, {.v = &layouts[0]}},
     {MODKEY, XKB_KEY_f, setlayout, {.v = &layouts[1]}},
     {MODKEY, XKB_KEY_m, setlayout, {.v = &layouts[2]}},
-    {MODKEY, XKB_KEY_space, setlayout, {0}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_space, togglefloating, {0}},
+    // {MODKEY, XKB_KEY_space, setlayout, {0}},
+    //
     // menus
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_o, menu, {.v = &menus[1]}},
