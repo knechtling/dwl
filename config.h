@@ -1,5 +1,5 @@
 // Constants
-#define TERMINAL "st"
+#define TERMINAL "foot"
 #define BROWSER "firefox"
 #define MUSICPLAYER "feishin"
 #define EMAILCLIENT "thunderbird"
