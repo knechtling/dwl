@@ -165,8 +165,8 @@ static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = {"s", "foot", "-T", "scratchpad", NULL};
-static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL, NULL, NULL};
-static const char *scratchnetcmd[] = {"n", "st", "-T", "scratchnet", "nmtui"};
+static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
+static const char *scratchnetcmd[] = {"n", "st", "-T", "scratchnet", "nmtui", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
