@@ -54,9 +54,7 @@ static const Rule rules[] = {
     /* app_id             title         tags mask     isfloating   monitor scratchkey */
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'},
-    {NULL, "Bitwarden", 0, 1, -1, 'p'},
-    {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -95,7 +93,7 @@ static const struct xkb_rule_names xkb_rules = {
 };
 
 /* numlock and capslock */
-static const int numlock = 1;
+static const int numlock = 0;
 static const int capslock = 0;
 
 static const int repeat_rate = 25;
@@ -165,9 +163,12 @@ static const char *menucmd[] = {"wmenu-run", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
-static const char *scratchpadcmd[] = {"s", "foot", "-T", "scratchpad", NULL};
+static const char *scratchpadcmd[] = {"s", TERMINAL, "-T", "scratchpad", NULL};
 static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
-static const char *scratchnetcmd[] = {"n", "st", "-T", "scratchnet", "nmtui", NULL};
+static const char *scratchnetcmd[] = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
+static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh", NULL};
+static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", NULL};
+static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -183,9 +184,15 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_s, spawn, SHCMD("$HOME/.local/bin/dwl-startup.sh")},
     // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
     // {MODKEY, XKB_KEY_F2, spawn, {.v = (const char *[]){"tutorialvids", NULL}}},
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_u, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_m, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_w, spawn, {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_p, spawn, {.v = (const char *[]){"/home/anton/.local/bin/maimpick-wl", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_r, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
     // {MODKEY, XKB_KEY_F6, spawn, {.v = (const char *[]){"torwrap", NULL}}},
     {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode"}}},
@@ -198,8 +205,8 @@ static const Key keys[] = {
     // SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings "
     // "--profile=low-latency --input-conf=/dev/null --title=webcam $(ls "
     // "/dev/video[0,2,4,6,8] | tail -n 1)")},
-    {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){"foot", "-e", "pkg-install", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){"foot", "-e", "pkg-remove", NULL}}},
+    {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
     {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
@@ -209,10 +216,13 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_z, spawn, {.v = (const char *[]){MUSICPLAYER, NULL}}},
     {MODKEY, XKB_KEY_e, spawn, {.v = (const char *[]){EMAILCLIENT, NULL}}},
     {MODKEY, XKB_KEY_r, spawn, {.v = (const char *[]){TERMINAL, "-e", "lfub", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_H, spawn, {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Y, spawn, {.v = (const char *[]){TERMINAL, "-e", "ytfzf", "-t", NULL}}},
     {MODKEY, XKB_KEY_n, spawn, {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
+    {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
+    {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F8, spawn, {.v = screenshotselcopycmd}},
     // XF86 Media Keys
     {0, XKB_KEY_XF86AudioMute, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
     {0, XKB_KEY_XF86AudioMicMute, spawn, SHCMD("pactl set-source-mute @DEFAULT_SOURCE@ toggle")},
@@ -295,17 +305,6 @@ static const Key keys[] = {
 static const Button buttons[] = {
     {ClkLtSymbol, 0, BTN_LEFT, setlayout, {.v = &layouts[0]}},
     {ClkLtSymbol, 0, BTN_RIGHT, setlayout, {.v = &layouts[2]}},
-    {ClkClient, MODKEY, BTN_LEFT, moveresize, {.ui = CurMove}},
-    {ClkClient, MODKEY, BTN_MIDDLE, togglefloating, {0}},
-    {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},
-    {ClkClient, MODKEY, BTN_LEFT, moveresize, {.ui = CurMove}},
-    {ClkClient, MODKEY, BTN_MIDDLE, togglefloating, {0}},
-    {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},
-    {ClkClient, MODKEY, BTN_LEFT, moveresize, {.ui = CurMove}},
-    {ClkClient, MODKEY, BTN_MIDDLE, togglefloating, {0}},
-    {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},
-    {ClkTagBar, 0, BTN_LEFT, view, {0}},
-    {ClkTagBar, 0, BTN_RIGHT, toggleview, {0}},
     {ClkClient, MODKEY, BTN_LEFT, moveresize, {.ui = CurMove}},
     {ClkClient, MODKEY, BTN_MIDDLE, togglefloating, {0}},
     {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},

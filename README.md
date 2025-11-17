@@ -12,26 +12,30 @@ philosophy. Like dwm, dwl is:
 - One C source file (or a very small number) configurable via `config.h`
 - Tied to as few external dependencies as possible
 
-## Getting Started:
+## Getting Started
 
 ### **dwl branch 0.7 and releases based upon 0.7 build against [wlroots] 0.18**
 
 ### Latest semi-stable [release]
+
 This is probably where you want to start. This builds against the dependent
 packages' versions currently shipping in major distributions. If your
 distribution's wlroots version is older, use an earlier dwl [release] or [0.x
 branch].
 
 ### Development branch [main]
+
 Active development progresses on the `main` branch. The `main` branch is built
 against a late (and often changing) git commit of wlroots. While the adventurous
 are welcome to use `main`, it is a rocky road. Using `main` requires that the
 user be willing to chase git commits of wlroots. Testing development pull
 requests may involve merging unmerged pull requests in [wlroots]' git repository
 and/or git commits of wayland.
-  
+
 ### Building dwl
+
 dwl has the following dependencies:
+
 - libinput
 - wayland
 - wlroots (compiled with the libinput backend)
@@ -40,6 +44,7 @@ dwl has the following dependencies:
 - pkg-config (compile-time only)
 
 dwl has the following additional dependencies if XWayland support is enabled:
+
 - libxcb
 - libxcb-wm
 - wlroots (compiled with X11 support)
@@ -47,7 +52,7 @@ dwl has the following additional dependencies if XWayland support is enabled:
 
 Install these (and their `-devel` versions if your distro has separate
 development packages) and run `make`. If you wish to build against a released
-version of wlroots (*you probably do*), use a [release] or a [0.x branch]. If
+version of wlroots (_you probably do_), use a [release] or a [0.x branch]. If
 you want to use the unstable development `main` branch, you need to use the git
 version of [wlroots].
 
@@ -81,19 +86,19 @@ modified in `config.h`.
 
 If you would like to run a script or command automatically at startup, you can
 specify the command using the `-s` option. This command will be executed as a
-shell command using `/bin/sh -c`.  It serves a similar function to `.xinitrc`,
+shell command using `/bin/sh -c`. It serves a similar function to `.xinitrc`,
 but differs in that the display server will not shut down when this process
 terminates. Instead, dwl will send this process a SIGTERM at shutdown and wait
 for it to terminate (if it hasn't already). This makes it ideal for execing into
 a user service manager like [s6], [anopa], [runit], [dinit], or [`systemd
 --user`].
 
-Note: The `-s` command is run as a *child process* of dwl, which means that it
+Note: The `-s` command is run as a _child process_ of dwl, which means that it
 does not have the ability to affect the environment of dwl or of any processes
 that it spawns. If you need to set environment variables that affect the entire
 dwl session, these must be set prior to running dwl. For example, Wayland
 requires a valid `XDG_RUNTIME_DIR`, which is usually set up by a session manager
-such as `elogind` or `systemd-logind`.  If your system doesn't do this
+such as `elogind` or `systemd-logind`. If your system doesn't do this
 automatically, you will need to configure it prior to launching `dwl`, e.g.:
 
     export XDG_RUNTIME_DIR=/tmp/xdg-runtime-$(id -u)
@@ -104,7 +109,7 @@ automatically, you will need to configure it prior to launching `dwl`, e.g.:
 
 Information about selected layouts, current window title, app-id, and
 selected/occupied/urgent tags is written to the stdin of the `-s` command (see
-the `printstatus()` function for details).  This information can be used to
+the `printstatus()` function for details). This information can be used to
 populate an external status bar with a script that parses the
 information. Failing to read this information will cause dwl to block, so if you
 do want to run a startup command that does not consume the status information,
@@ -156,10 +161,10 @@ Features under consideration (possibly as patches) are:
 
 - Protocols made trivial by wlroots
 - Implement the text-input and input-method protocols to support IME once ibus
-  implements input-method v2 (see https://github.com/ibus/ibus/pull/2256 and
-  https://codeberg.org/dwl/dwl/pulls/235)
+  implements input-method v2 (see <https://github.com/ibus/ibus/pull/2256> and
+  <https://codeberg.org/dwl/dwl/pulls/235>)
 
-Feature *non-goals* for the main codebase include:
+Feature _non-goals_ for the main codebase include:
 
 - Client-side decoration (any more than is necessary to tell the clients not to)
 - Client-initiated window management, such as move, resize, and close, which can
@@ -182,10 +187,132 @@ inspiration, and to the various contributors to the project, including:
   and for helping to keep the project running
 - Stivvo for output management and fullscreen support, and patch maintenance
 
+## Keybindings & Functionality
+
+This repository ships a custom `config.h`. `MODKEY` is set to the Super/Logo key
+(`WLR_MODIFIER_LOGO`). Helper applications default to `foot` (terminal),
+`firefox` (browser), `feishin` (music), and `thunderbird` (mail). Scratchpads are
+retagged to the currently focused monitor whenever they are toggled, so the
+floating terminal that pops up always follows your active output.
+
+### Launchers & Scratchpads
+
+| Keys                 | Action                                                                        |
+| -------------------- | ----------------------------------------------------------------------------- |
+| `Super+d`            | Application launcher (`wmenu-run`)                                            |
+| `Super+Return`       | Open the default terminal (`foot`)                                            |
+| `Super+Shift+Return` | Toggle the general scratchpad terminal (`foot -T scratchpad`)                 |
+| `Super+Shift+s`      | Re-run `dwl-startup.sh` (mako, wallpaper/clipboard helpers, foot server)      |
+| `Super+Alt+u`        | Run `dmenuhandler` to process the clipboard/link with mpv, queue, setbg, etc. |
+| `Super+Alt+m`        | Run `dmenumountcifs` to mount a nearby CIFS share via Avahi                   |
+| `Super+Alt+w`        | Launch the `weblaunch` desktop menu                                           |
+| `Super+Alt+p`        | Take Wayland screenshots via `maimpick-wl`                                    |
+| `Super+Alt+r`        | Open the `dmenurecord` wf-recorder/ffmpeg helper                              |
+| `Super+Shift+p`      | Toggle the Bitwarden scratchpad (`bitwarden-desktop`)                         |
+| `Super+Shift+w`      | Toggle the network scratchpad (`foot -T scratchnet -e nmtui`)                 |
+| `Super+b`            | Show or hide the dwl bar                                                      |
+| `Right Ctrl`         | Run `wlr-which-key` to display the keybinding cheat sheet                     |
+| `Super+c`            | Pick from clipboard history (`cliphist → wmenu → wl-copy`)                    |
+| `Super+Backspace`    | Launch `sysact` (system action helper)                                        |
+| `Super+F3`           | Run `displayselect` to pick an output layout                                  |
+| `Super+F4`           | Open `pulsemixer` inside the terminal                                         |
+| `Super+F7`           | Launch `dmenuunicode`                                                         |
+| `Super+i`            | Run `pkg-install` (terminal)                                                  |
+| `Super+Shift+r`      | Run `pkg-remove` (terminal)                                                   |
+| `Super+Shift+h`      | Open `htop` inside the terminal                                               |
+| `Super+Shift+c`      | `gtk-launch whatsapp-web`                                                     |
+| `Super+Shift+y`      | Start `ytfzf -t` inside the terminal                                          |
+| `Super+F1`           | `j4-dmenu-desktop` (desktop entry launcher)                                   |
+| `Super+r`            | Launch `lfub` file manager inside the terminal                                |
+| `Super+n`            | Open `nvim` directly in the Wiki index (`nvim -c WikiIndex`)                  |
+| `Super+w`            | Launch the browser (`firefox`)                                                |
+| `Super+z`            | Launch the music player (`feishin`)                                           |
+| `Super+e`            | Launch the e-mail client (`thunderbird`)                                      |
+| `Super+Shift+m`      | Toggle sink mute via `wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle`             |
+| `F8`                 | Screenshot all monitors to `~/Pictures/screenshots`                           |
+| `Shift+F8`           | Selection screenshot saved to `~/Pictures/screenshots`                        |
+| `Ctrl+F8`            | Selection screenshot copied to clipboard                                      |
+
+### Audio, Media & Hardware
+
+| Keys                                   | Action                              |
+| -------------------------------------- | ----------------------------------- |
+| `Super+Shift+*` (Shift on the `+` key) | Lower sink volume by 15 % (`wpctl`) |
+| `Super++`                              | Raise sink volume by 5 % (`wpctl`)  |
+| `XF86AudioMute`                        | Toggle sink mute                    |
+| `XF86AudioMicMute`                     | Toggle microphone mute              |
+| `XF86AudioRaiseVolume`                 | Raise sink volume by 3 %            |
+| `XF86AudioLowerVolume`                 | Lower sink volume by 3 %            |
+| `XF86AudioPrev`                        | `mpc prev`                          |
+| `XF86AudioNext`                        | `mpc next`                          |
+| `XF86AudioPause`                       | `mpc pause`                         |
+| `XF86AudioPlay`                        | `mpc play`                          |
+| `XF86AudioStop`                        | `mpc stop`                          |
+| `XF86MonBrightnessUp`                  | `brightnessctl set +15%`            |
+| `XF86MonBrightnessDown`                | `brightnessctl set 15%-`            |
+
+### Window & Layout Management
+
+| Keys                              | Action                                         |
+| --------------------------------- | ---------------------------------------------- |
+| `Super+j` / `Super+k`             | Focus the next/previous tiled client           |
+| `Super+Shift+I` / `Super+Shift+D` | Increase/decrease the number of master clients |
+| `Super+h` / `Super+l`             | Shrink/grow the master area by 5 %             |
+| `Super+Space`                     | Promote the focused client to master (`zoom`)  |
+| `Super+Tab`                       | Jump back to the previous tag selection        |
+| `Super+g`                         | Toggle gaps                                    |
+| `Super+q`                         | Close the focused client                       |
+| `Super+y`                         | Toggle fullscreen                              |
+| `Super+Shift+f`                   | Toggle floating mode                           |
+| `Super+t` / `Super+f` / `Super+m` | Select tile, floating, or monocle layout       |
+| `Super+o`                         | Menu of open windows (`wmenu -p Windows`)      |
+| `Super+Alt+o`                     | Layout picker menu (`wmenu -p Layouts`)        |
+| `Super+Alt+r`                     | Dynamic rules menu (`wmenu -p Rules`)          |
+
+### Tags & Monitors
+
+| Keys                              | Action                                                        |
+| --------------------------------- | ------------------------------------------------------------- |
+| `Super+0`                         | View all tags                                                 |
+| `Super+v`                         | Temporarily view the tag(s) of the focused client (`winview`) |
+| `Super+Shift+=`                   | Tag the focused client with all tags                          |
+| `Super+,` / `Super+.`             | Focus the monitor to the left/right                           |
+| `Super+<` / `Super+>`             | Focus the monitor left/right while keeping current tags       |
+| `Super+Shift+<` / `Super+Shift+>` | Send the focused client to the monitor left/right             |
+
+For tags **1–9** on this German-layout configuration:
+
+- `Super+<number>` – view that tag.
+- `Super+Ctrl+<number>` – toggle that tag in the current view.
+- `Super+Shift+<symbol>` – move the focused client to that tag (use the shifted symbol above the digit, e.g. `!` for `1`).
+- `Super+Ctrl+Shift+<symbol>` – toggle-tag the focused client.
+
+### Session, VTs & Scratchpads
+
+| Keys                 | Action                                       |
+| -------------------- | -------------------------------------------- |
+| `Super+Shift+q`      | Quit dwl cleanly                             |
+| `Ctrl+Alt+Backspace` | Force dwl to quit                            |
+| `Ctrl+Alt+F1…F12`    | Switch to the corresponding virtual terminal |
+
+### Mouse Bindings
+
+| Button                           | Action                               |
+| -------------------------------- | ------------------------------------ |
+| `Super + Left drag` (client)     | Move the focused client              |
+| `Super + Right drag` (client)    | Resize the focused client            |
+| `Super + Middle click` (client)  | Toggle floating                      |
+| `Left click` on layout symbol    | Select tiling layout                 |
+| `Right click` on layout symbol   | Select monocle layout                |
+| `Left click` on tag              | View that tag                        |
+| `Right click` on tag             | Toggle that tag                      |
+| `Super + Left click` on tag      | Tag the focused client with that tag |
+| `Super + Right click` on tag     | Toggle-tag the focused client        |
+| `Left click` inside the systray  | Activate the clicked tray item       |
+| `Right click` inside the systray | Open the tray context menu           |
 
 [`systemd --user`]: https://wiki.archlinux.org/title/Systemd/User
 [#dwl on Libera Chat]: https://web.libera.chat/?channels=#dwl
-[0.7-rc1]: https://codeberg.org/dwl/dwl/releases/tag/v0.7-rc1
 [0.x branch]: https://codeberg.org/dwl/dwl/branches
 [anopa]: https://jjacky.com/anopa/
 [dinit]: https://davmac.org/projects/dinit/

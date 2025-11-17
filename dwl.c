@@ -2,6 +2,7 @@
  * See LICENSE file for copyright and license details.
  */
 #include <dbus/dbus.h>
+#include <errno.h>
 #include <getopt.h>
 #include <libdrm/drm_fourcc.h>
 #include <libinput.h>
@@ -81,7 +82,7 @@
 /* macros */
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
-#define CLEANMASK(mask) (mask & ~WLR_MODIFIER_CAPS)
+#define CLEANMASK(mask) (mask & ~(WLR_MODIFIER_CAPS | WLR_MODIFIER_MOD2 | WLR_MODIFIER_MOD3))
 #define VISIBLEON(C, M) ((M) && (C)->mon == (M) && ((C)->tags & (M)->tagset[(M)->seltags]))
 #define LENGTH(X) (sizeof X / sizeof X[0])
 #define END(A) ((A) + LENGTH(A))
@@ -375,6 +376,7 @@ static void locksession(struct wl_listener *listener, void *data);
 static void mapnotify(struct wl_listener *listener, void *data);
 static void maximizenotify(struct wl_listener *listener, void *data);
 static void menu(const Arg *arg);
+static void notifyexecfailure(const char *cmd, int err);
 static int menuread(int fd, uint32_t mask, void *data);
 static void menuwinfeed(FILE *f);
 static void menuwinaction(char *line);
@@ -496,11 +498,14 @@ static KeyboardGroup *kb_group;
 static unsigned int cursor_mode;
 static Client *grabc;
 static int grabcx, grabcy; /* client-relative */
+static int drag_tiled;
 
 static struct wlr_output_layout *output_layout;
 static struct wlr_box sgeom;
 static struct wl_list mons;
 static Monitor *selmon;
+static int restart_requested;
+static char **saved_argv;
 
 static char stext[256];
 static struct wl_event_source *status_event_source;
@@ -856,6 +861,7 @@ void buttonpress(struct wl_listener *listener, void *data) {
       /* Drop the window off on its new monitor */
       selmon = xytomon(cursor->x, cursor->y);
       setmon(grabc, selmon, 0);
+      drag_tiled = 0;
       return;
     } else {
       cursor_mode = CurNormal;
@@ -1997,6 +2003,9 @@ void handlesig(int signo) {
     while (waitpid(-1, NULL, WNOHANG) > 0)
       ;
 #endif
+  } else if (signo == SIGHUP) {
+    restart_requested = 1;
+    quit(NULL);
   } else if (signo == SIGINT || signo == SIGTERM) {
     quit(NULL);
   }
@@ -2558,11 +2567,28 @@ void motionnotify(uint32_t time, struct wlr_input_device *device, double dx, dou
 
   /* If we are currently grabbing the mouse, handle and return */
   if (cursor_mode == CurMove) {
-    /* Move the grabbed client to the new position. */
-    resize(grabc,
-           (struct wlr_box){
-               .x = (int)round(cursor->x) - grabcx, .y = (int)round(cursor->y) - grabcy, .width = grabc->geom.width, .height = grabc->geom.height},
-           1);
+    if (drag_tiled) {
+      Client *target = NULL;
+
+      if (!device)
+        return;
+
+      xytonode(cursor->x, cursor->y, NULL, &target, NULL, NULL, NULL);
+      if (target && target != grabc && !client_is_unmanaged(target) && !target->isfloating && target->mon == grabc->mon) {
+        wl_list_remove(&grabc->link);
+        if ((int)round(cursor->y) > target->geom.y + target->geom.height / 2)
+          wl_list_insert(&target->link, &grabc->link);
+        else
+          wl_list_insert(target->link.prev, &grabc->link);
+        arrange(grabc->mon);
+      }
+    } else {
+      /* Move the grabbed client to the new position. */
+      resize(grabc,
+             (struct wlr_box){
+                 .x = (int)round(cursor->x) - grabcx, .y = (int)round(cursor->y) - grabcy, .width = grabc->geom.width, .height = grabc->geom.height},
+             1);
+    }
     return;
   } else if (cursor_mode == CurResize) {
     resize(
@@ -2600,6 +2626,14 @@ void moveresize(const Arg *arg) {
   xytonode(cursor->x, cursor->y, NULL, &grabc, NULL, NULL, NULL);
   if (!grabc || client_is_unmanaged(grabc) || grabc->isfullscreen)
     return;
+
+  drag_tiled = 0;
+  if (arg->ui == CurMove && !grabc->isfloating && grabc->mon && grabc->mon->lt[grabc->mon->sellt]->arrange) {
+    drag_tiled = 1;
+    cursor_mode = CurMove;
+    wlr_cursor_set_xcursor(cursor, cursor_mgr, "fleur");
+    return;
+  }
 
   /* Float the window and tell motionnotify to grab it */
   setfloating(grabc, 1);
@@ -3015,8 +3049,21 @@ void setsel(struct wl_listener *listener, void *data) {
   wlr_seat_set_selection(seat, event->source, event->serial);
 }
 
+static void notifyexecfailure(const char *cmd, int err) {
+  char msg[256];
+  if (!cmd)
+    _exit(EXIT_FAILURE);
+  if (err == ENOENT)
+    snprintf(msg, sizeof(msg), "Missing dependency: %s", cmd);
+  else
+    snprintf(msg, sizeof(msg), "Failed to launch %s (%s)", cmd, strerror(err));
+  execlp("notify-send", "notify-send", "dwl", msg, NULL);
+  fprintf(stderr, "dwl: %s\n", msg);
+  _exit(EXIT_FAILURE);
+}
+
 void setup(void) {
-  int i, sig[] = {SIGCHLD, SIGINT, SIGTERM, SIGPIPE};
+  int i, sig[] = {SIGCHLD, SIGINT, SIGTERM, SIGPIPE, SIGHUP};
   struct sigaction sa = {.sa_flags = SA_RESTART, .sa_handler = handlesig};
   sigemptyset(&sa.sa_mask);
 
@@ -3253,7 +3300,7 @@ void spawn(const Arg *arg) {
     dup2(STDERR_FILENO, STDOUT_FILENO);
     setsid();
     execvp(((char **)arg->v)[0], (char **)arg->v);
-    die("dwl: execvp %s failed:", ((char **)arg->v)[0]);
+    notifyexecfailure(((char **)arg->v)[0], errno);
   }
 }
 
@@ -3262,7 +3309,7 @@ void spawnscratch(const Arg *arg) {
     dup2(STDERR_FILENO, STDOUT_FILENO);
     setsid();
     execvp(((char **)arg->v)[1], ((char **)arg->v) + 1);
-    die("dwl: execvp %s failed:", ((char **)arg->v)[1]);
+    notifyexecfailure(((char **)arg->v)[1], errno);
   }
 }
 
@@ -3382,7 +3429,10 @@ void togglescratch(const Arg *arg) {
   }
 
   if (found) {
-    c->tags = VISIBLEON(c, selmon) ? 0 : selmon->tagset[selmon->seltags];
+    int visible = VISIBLEON(c, selmon);
+    if (!visible && c->mon != selmon)
+      setmon(c, selmon, selmon->tagset[selmon->seltags]);
+    c->tags = visible ? 0 : selmon->tagset[selmon->seltags];
 
     focusclient(c->tags == 0 ? focustop(selmon) : c, 1);
     arrange(selmon);
@@ -3465,6 +3515,7 @@ void unmapnotify(struct wl_listener *listener, void *data) {
   if (c == grabc) {
     cursor_mode = CurNormal;
     grabc = NULL;
+    drag_tiled = 0;
   }
 
   if (client_is_unmanaged(c)) {
@@ -3919,6 +3970,8 @@ int main(int argc, char *argv[]) {
   char *startup_cmd = NULL;
   int c;
 
+  saved_argv = argv;
+
   while ((c = getopt(argc, argv, "s:hdv")) != -1) {
     if (c == 's')
       startup_cmd = optarg;
@@ -3938,6 +3991,10 @@ int main(int argc, char *argv[]) {
   setup();
   run(startup_cmd);
   cleanup();
+  if (restart_requested) {
+    execvp(saved_argv[0], saved_argv);
+    die("restart: execvp %s failed:", saved_argv[0]);
+  }
   return EXIT_SUCCESS;
 
 usage:

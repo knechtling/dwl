@@ -159,6 +159,9 @@ static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = {"s", "foot", "-T", "scratchpad", NULL};
+static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh", NULL};
+static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", NULL};
+static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -191,6 +194,9 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_O, menu, {.v = &menus[1]}},
     {MODKEY, XKB_KEY_r, menu, {.v = &menus[2]}},
+    {0, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
+    {WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
+    {WLR_MODIFIER_CTRL, XKB_KEY_F8, spawn, {.v = screenshotselcopycmd}},
     // tags
     {MODKEY, XKB_KEY_0, view, {.ui = ~0}},
     {MODKEY, XKB_KEY_o, winview, {0}},
