@@ -253,6 +253,8 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_equal, tag, {.ui = ~0}},
     {MODKEY, XKB_KEY_comma, focusmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY, XKB_KEY_period, focusmon, {.i = WLR_DIRECTION_RIGHT}},
+    {MODKEY, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
+    {MODKEY, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
     TAGKEYS(XKB_KEY_1, XKB_KEY_exclam, 0),
