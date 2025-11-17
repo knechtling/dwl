@@ -51,11 +51,12 @@ static const Menu menus[] = {
 /* NOTE: ALWAYS keep a rule declared even if you don't use rules (e.g leave at
  * least one example) */
 static const Rule rules[] = {
-    /* app_id             title         tags mask     isfloating   monitor
-       scratchkey */
+    /* app_id             title         tags mask     isfloating   monitor scratchkey */
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {"bitwarden", NULL, 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'},
+    {NULL, "Bitwarden", 0, 1, -1, 'p'},
+    {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
