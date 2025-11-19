@@ -132,6 +132,14 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 static const char *termcmd[] = { "foot", NULL };
 static const char *menucmd[] = { "wmenu-run", NULL };
 
+#define ADDPASSRULE(S, K) {.appid = S, .len = LENGTH(S), .key = K}
+static const PassKeypressRule pass_rules[] = {
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
+	ADDPASSRULE("WebCord", XKB_KEY_n),
+};
+
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
 	/* modifier                  key                 function        argument */
