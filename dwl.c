@@ -1,6 +1,15 @@
 /*
  * See LICENSE file for copyright and license details.
  */
+
+/* stuff for hot-reload */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <limits.h>
+#include <unistd.h>
+#include <libgen.h>
+#include <errno.h>
+
 #include <getopt.h>
 #include <libinput.h>
 #include <linux/input-event-codes.h>
@@ -68,6 +77,7 @@
 #include <xcb/xcb_icccm.h>
 #endif
 
+
 #include "util.h"
 
 /* macros */
@@ -78,8 +88,33 @@
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define END(A)                  ((A) + LENGTH(A))
 #define TAGMASK                 ((1u << TAGCOUNT) - 1)
-#define LISTEN(E, L, H)         wl_signal_add((E), ((L)->notify = (H), (L)))
-#define LISTEN_STATIC(E, H)     do { struct wl_listener *_l = ecalloc(1, sizeof(*_l)); _l->notify = (H); wl_signal_add((E), _l); } while (0)
+#define SYM(a) dlsym(dwl_module, #a)
+#define TSYM(T, a) ((T)SYM(a))
+#define CSYM(T, a) *(TSYM(T*, a))
+
+#define LISTEN(E, L, H)         do { \
+                                    (L)->notify = SYM(H); \
+                                    listeners = append_listener((L), listeners); \
+                                    wl_signal_add((E), (L)); \
+                                } while(0)
+
+#define LISTEN_GLOBAL(E, L)     do { \
+                                    struct wl_listener* l = SYM(L); \
+                                    listeners = append_listener(l, listeners); \
+                                    wl_signal_add((E), l); \
+                                } while (0)
+
+#define LISTEN_STATIC(E, H)     do { \
+                                    struct wl_listener* _l = ecalloc(1, sizeof(struct wl_listener)); \
+                                    _l->notify = SYM(H); \
+                                    listeners = append_listener(_l, listeners); \
+                                    wl_signal_add((E), _l); \
+                                } while (0)
+
+#define UNLISTEN(L)             do { \
+                                    wl_list_remove(&(L)->link); \
+                                    listeners = remove_listener((L), listeners);\
+                                } while (0)
 
 /* enums */
 enum { CurNormal, CurPressed, CurMove, CurResize }; /* cursor */
@@ -239,6 +274,9 @@ typedef struct {
 	struct wl_listener destroy;
 } SessionLock;
 
+#define static 
+
+#ifdef HOT
 /* function declarations */
 static void applybounds(Client *c, struct wlr_box *bbox);
 static void applyrules(Client *c);
@@ -250,7 +288,18 @@ static void axisnotify(struct wl_listener *listener, void *data);
 static void buttonpress(struct wl_listener *listener, void *data);
 static void chvt(const Arg *arg);
 static void checkidleinhibitor(struct wlr_surface *exclude);
+
+#undef static
+#define static extern
+#endif
+
+/* this is cold */
 static void cleanup(void);
+
+#undef static
+#define static
+#ifdef HOT
+
 static void cleanupmon(struct wl_listener *listener, void *data);
 static void cleanuplisteners(void);
 static void closemon(Monitor *m);
@@ -318,7 +367,18 @@ static void requestdecorationmode(struct wl_listener *listener, void *data);
 static void requeststartdrag(struct wl_listener *listener, void *data);
 static void requestmonstate(struct wl_listener *listener, void *data);
 static void resize(Client *c, struct wlr_box geo, int interact);
+
+#undef static
+#define static extern
+#endif
+
+/* this is cold */
 static void run(char *startup_cmd);
+
+#ifdef HOT
+#undef static
+#define static
+
 static void setcursor(struct wl_listener *listener, void *data);
 static void setcursorshape(struct wl_listener *listener, void *data);
 static void setfloating(Client *c, int floating);
@@ -328,7 +388,18 @@ static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, uint32_t newtags);
 static void setpsel(struct wl_listener *listener, void *data);
 static void setsel(struct wl_listener *listener, void *data);
+
+#undef static
+#define static extern
+#endif
+
+/* this is cold */
 static void setup(void);
+
+#ifdef HOT
+#undef static
+#define static
+
 static void spawn(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
 static void tag(const Arg *arg);
@@ -351,6 +422,16 @@ static Monitor *xytomon(double x, double y);
 static void xytonode(double x, double y, struct wlr_surface **psurface,
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 static void zoom(const Arg *arg);
+
+#endif
+
+#ifdef HOT
+    #undef static
+    #define static extern
+#else
+    #undef static
+    #define static 
+#endif
 
 /* variables */
 static pid_t child_pid = -1;
@@ -406,6 +487,10 @@ static struct wlr_box sgeom;
 static struct wl_list mons;
 static Monitor *selmon;
 
+#ifdef HOT
+#undef static
+#define static
+
 /* global event handlers */
 static struct wl_listener cursor_axis = {.notify = axisnotify};
 static struct wl_listener cursor_button = {.notify = buttonpress};
@@ -429,6 +514,7 @@ static struct wl_listener output_mgr_test = {.notify = outputmgrtest};
 static struct wl_listener output_power_mgr_set_mode = {.notify = powermgrsetmode};
 static struct wl_listener request_activate = {.notify = urgent};
 static struct wl_listener request_cursor = {.notify = setcursor};
+
 static struct wl_listener request_set_psel = {.notify = setpsel};
 static struct wl_listener request_set_sel = {.notify = setsel};
 static struct wl_listener request_set_cursor_shape = {.notify = setcursorshape};
@@ -436,7 +522,15 @@ static struct wl_listener request_start_drag = {.notify = requeststartdrag};
 static struct wl_listener start_drag = {.notify = startdrag};
 static struct wl_listener new_session_lock = {.notify = locksession};
 
+/* undoes the shadowing of static from above */
+#endif
+#undef static 
+
+
 #ifdef XWAYLAND
+#ifdef HOT
+#define static
+
 static void activatex11(struct wl_listener *listener, void *data);
 static void associatex11(struct wl_listener *listener, void *data);
 static void configurex11(struct wl_listener *listener, void *data);
@@ -446,11 +540,45 @@ static void sethints(struct wl_listener *listener, void *data);
 static void xwaylandready(struct wl_listener *listener, void *data);
 static struct wl_listener new_xwayland_surface = {.notify = createnotifyx11};
 static struct wl_listener xwayland_ready = {.notify = xwaylandready};
-static struct wlr_xwayland *xwayland;
+
+#define  static extern
+#else
+#define static 
 #endif
 
+static struct wlr_xwayland *xwayland;
+
+#undef static
+#endif
+
+/* this is where we put global hot-reload state */
+#ifdef HOT 
+#define COLD extern
+#else
+#define COLD
+
+static void* load(void);
+static const char* get_module_path(void);
+
+#endif
+
+COLD void * dwl_module = NULL;
+COLD void * last_module = NULL;
+COLD struct listens* listeners = NULL;
+COLD void reload(const Arg* arg);
+
+#ifndef HOT
+static char* runpath;
+
+#endif
+
+
+#ifdef HOT
+
+#define static
 /* configuration, allows nested code to access above variables */
 #include "config.h"
+#undef static
 
 /* attempt to encapsulate suck into one file */
 #include "client.h"
@@ -696,10 +824,12 @@ checkidleinhibitor(struct wlr_surface *exclude)
 	wlr_idle_notifier_v1_set_inhibited(idle_notifier, inhibited);
 }
 
+#endif
+
 void
 cleanup(void)
 {
-	cleanuplisteners();
+	TSYM(void (*)(void), cleanuplisteners)();
 #ifdef XWAYLAND
 	wlr_xwayland_destroy(xwayland);
 	xwayland = NULL;
@@ -711,7 +841,7 @@ cleanup(void)
 	}
 	wlr_xcursor_manager_destroy(cursor_mgr);
 
-	destroykeyboardgroup(&kb_group->destroy, NULL);
+	TSYM(void (*)(struct wl_listener*, void*), destroykeyboardgroup)(&kb_group->destroy, NULL);
 
 	/* If it's not destroyed manually, it will cause a use-after-free of wlr_seat.
 	 * Destroy it until it's fixed on the wlroots side */
@@ -722,6 +852,8 @@ cleanup(void)
 	   to avoid destroying them with an invalid scene output. */
 	wlr_scene_node_destroy(&scene->tree.node);
 }
+
+#ifdef HOT
 
 void
 cleanupmon(struct wl_listener *listener, void *data)
@@ -736,10 +868,10 @@ cleanupmon(struct wl_listener *listener, void *data)
 			wlr_layer_surface_v1_destroy(l->layer_surface);
 	}
 
-	wl_list_remove(&m->destroy.link);
-	wl_list_remove(&m->frame.link);
+	UNLISTEN(&m->destroy);
+	UNLISTEN(&m->frame);
 	wl_list_remove(&m->link);
-	wl_list_remove(&m->request_state.link);
+	UNLISTEN(&m->request_state);
 	if (m->lock_surface)
 		destroylocksurface(&m->destroy_lock_surface, NULL);
 	m->wlr_output->data = NULL;
@@ -754,37 +886,37 @@ cleanupmon(struct wl_listener *listener, void *data)
 void
 cleanuplisteners(void)
 {
-	wl_list_remove(&cursor_axis.link);
-	wl_list_remove(&cursor_button.link);
-	wl_list_remove(&cursor_frame.link);
-	wl_list_remove(&cursor_motion.link);
-	wl_list_remove(&cursor_motion_absolute.link);
-	wl_list_remove(&gpu_reset.link);
-	wl_list_remove(&new_idle_inhibitor.link);
-	wl_list_remove(&layout_change.link);
-	wl_list_remove(&new_input_device.link);
-	wl_list_remove(&new_virtual_keyboard.link);
-	wl_list_remove(&new_virtual_pointer.link);
-	wl_list_remove(&new_pointer_constraint.link);
-	wl_list_remove(&new_output.link);
-	wl_list_remove(&new_xdg_toplevel.link);
-	wl_list_remove(&new_xdg_decoration.link);
-	wl_list_remove(&new_xdg_popup.link);
-	wl_list_remove(&new_layer_surface.link);
-	wl_list_remove(&output_mgr_apply.link);
-	wl_list_remove(&output_mgr_test.link);
-	wl_list_remove(&output_power_mgr_set_mode.link);
-	wl_list_remove(&request_activate.link);
-	wl_list_remove(&request_cursor.link);
-	wl_list_remove(&request_set_psel.link);
-	wl_list_remove(&request_set_sel.link);
-	wl_list_remove(&request_set_cursor_shape.link);
-	wl_list_remove(&request_start_drag.link);
-	wl_list_remove(&start_drag.link);
-	wl_list_remove(&new_session_lock.link);
+	UNLISTEN(&cursor_axis);
+	UNLISTEN(&cursor_button);
+	UNLISTEN(&cursor_frame);
+	UNLISTEN(&cursor_motion);
+	UNLISTEN(&cursor_motion_absolute);
+	UNLISTEN(&gpu_reset);
+	UNLISTEN(&new_idle_inhibitor);
+	UNLISTEN(&layout_change);
+	UNLISTEN(&new_input_device);
+	UNLISTEN(&new_virtual_keyboard);
+	UNLISTEN(&new_virtual_pointer);
+	UNLISTEN(&new_pointer_constraint);
+	UNLISTEN(&new_output);
+	UNLISTEN(&new_xdg_toplevel);
+	UNLISTEN(&new_xdg_decoration);
+	UNLISTEN(&new_xdg_popup);
+	UNLISTEN(&new_layer_surface);
+	UNLISTEN(&output_mgr_apply);
+	UNLISTEN(&output_mgr_test);
+	UNLISTEN(&output_power_mgr_set_mode);
+	UNLISTEN(&request_activate);
+	UNLISTEN(&request_cursor);
+	UNLISTEN(&request_set_psel);
+	UNLISTEN(&request_set_sel);
+	UNLISTEN(&request_set_cursor_shape);
+	UNLISTEN(&request_start_drag);
+	UNLISTEN(&start_drag);
+	UNLISTEN(&new_session_lock);
 #ifdef XWAYLAND
-	wl_list_remove(&new_xwayland_surface.link);
-	wl_list_remove(&xwayland_ready.link);
+	UNLISTEN(&new_xwayland_surface);
+	UNLISTEN(&xwayland_ready);
 #endif
 }
 
@@ -814,7 +946,7 @@ closemon(Monitor *m)
 			setmon(c, selmon, c->tags);
 	}
 	focusclient(focustop(selmon), 1);
-	printstatus();
+	TSYM(void (*)(void), printstatus)();
 }
 
 void
@@ -911,7 +1043,7 @@ commitpopup(struct wl_listener *listener, void *data)
 	box.x -= (type == LayerShell ? l->scene->node.x : c->geom.x);
 	box.y -= (type == LayerShell ? l->scene->node.y : c->geom.y);
 	wlr_xdg_popup_unconstrain_from_box(popup, &box);
-	wl_list_remove(&listener->link);
+	UNLISTEN(listener);
 	free(listener);
 }
 
@@ -1242,8 +1374,8 @@ destroydecoration(struct wl_listener *listener, void *data)
 {
 	Client *c = wl_container_of(listener, c, destroy_decoration);
 
-	wl_list_remove(&c->destroy_decoration.link);
-	wl_list_remove(&c->set_decoration_mode.link);
+	UNLISTEN(&c->destroy_decoration);
+	UNLISTEN(&c->set_decoration_mode);
 }
 
 void
@@ -1252,7 +1384,7 @@ destroydragicon(struct wl_listener *listener, void *data)
 	/* Focus enter isn't sent during drag, so refocus the focused node. */
 	focusclient(focustop(selmon), 1);
 	motionnotify(0, NULL, 0, 0, 0, 0);
-	wl_list_remove(&listener->link);
+	UNLISTEN(listener);
 	free(listener);
 }
 
@@ -1262,7 +1394,7 @@ destroyidleinhibitor(struct wl_listener *listener, void *data)
 	/* `data` is the wlr_surface of the idle inhibitor being destroyed,
 	 * at this point the idle inhibitor is still in the list of the manager */
 	checkidleinhibitor(wlr_surface_get_root_surface(data));
-	wl_list_remove(&listener->link);
+	UNLISTEN(listener);
 	free(listener);
 }
 
@@ -1272,9 +1404,9 @@ destroylayersurfacenotify(struct wl_listener *listener, void *data)
 	LayerSurface *l = wl_container_of(listener, l, destroy);
 
 	wl_list_remove(&l->link);
-	wl_list_remove(&l->destroy.link);
-	wl_list_remove(&l->unmap.link);
-	wl_list_remove(&l->surface_commit.link);
+	UNLISTEN(&l->destroy);
+	UNLISTEN(&l->unmap);
+	UNLISTEN(&l->surface_commit);
 	wlr_scene_node_destroy(&l->scene->node);
 	wlr_scene_node_destroy(&l->popups->node);
 	free(l);
@@ -1293,9 +1425,9 @@ destroylock(SessionLock *lock, int unlock)
 	motionnotify(0, NULL, 0, 0, 0, 0);
 
 destroy:
-	wl_list_remove(&lock->new_surface.link);
-	wl_list_remove(&lock->unlock.link);
-	wl_list_remove(&lock->destroy.link);
+	UNLISTEN(&lock->new_surface);
+	UNLISTEN(&lock->unlock);
+	UNLISTEN(&lock->destroy);
 
 	wlr_scene_node_destroy(&lock->scene->node);
 	cur_lock = NULL;
@@ -1309,7 +1441,7 @@ destroylocksurface(struct wl_listener *listener, void *data)
 	struct wlr_session_lock_surface_v1 *surface, *lock_surface = m->lock_surface;
 
 	m->lock_surface = NULL;
-	wl_list_remove(&m->destroy_lock_surface.link);
+	UNLISTEN(&m->destroy_lock_surface);
 
 	if (lock_surface->surface != seat->keyboard_state.focused_surface)
 		return;
@@ -1329,23 +1461,23 @@ destroynotify(struct wl_listener *listener, void *data)
 {
 	/* Called when the xdg_toplevel is destroyed. */
 	Client *c = wl_container_of(listener, c, destroy);
-	wl_list_remove(&c->destroy.link);
-	wl_list_remove(&c->set_title.link);
-	wl_list_remove(&c->fullscreen.link);
+	UNLISTEN(&c->destroy);
+	UNLISTEN(&c->set_title);
+	UNLISTEN(&c->fullscreen);
 #ifdef XWAYLAND
 	if (c->type != XDGShell) {
-		wl_list_remove(&c->activate.link);
-		wl_list_remove(&c->associate.link);
-		wl_list_remove(&c->configure.link);
-		wl_list_remove(&c->dissociate.link);
-		wl_list_remove(&c->set_hints.link);
+		UNLISTEN(&c->activate);
+		UNLISTEN(&c->associate);
+		UNLISTEN(&c->configure);
+		UNLISTEN(&c->dissociate);
+		UNLISTEN(&c->set_hints);
 	} else
 #endif
 	{
-		wl_list_remove(&c->commit.link);
-		wl_list_remove(&c->map.link);
-		wl_list_remove(&c->unmap.link);
-		wl_list_remove(&c->maximize.link);
+		UNLISTEN(&c->commit);
+		UNLISTEN(&c->map);
+		UNLISTEN(&c->unmap);
+		UNLISTEN(&c->maximize);
 	}
 	free(c);
 }
@@ -1360,7 +1492,7 @@ destroypointerconstraint(struct wl_listener *listener, void *data)
 		active_constraint = NULL;
 	}
 
-	wl_list_remove(&pointer_constraint->destroy.link);
+	UNLISTEN(&pointer_constraint->destroy);
 	free(pointer_constraint);
 }
 
@@ -1376,9 +1508,9 @@ destroykeyboardgroup(struct wl_listener *listener, void *data)
 {
 	KeyboardGroup *group = wl_container_of(listener, group, destroy);
 	wl_event_source_remove(group->key_repeat_source);
-	wl_list_remove(&group->key.link);
-	wl_list_remove(&group->modifiers.link);
-	wl_list_remove(&group->destroy.link);
+	UNLISTEN(&group->key);
+	UNLISTEN(&group->modifiers);
+	UNLISTEN(&group->destroy);
 	wlr_keyboard_group_destroy(group->wlr_group);
 	free(group);
 }
@@ -1544,8 +1676,8 @@ gpureset(struct wl_listener *listener, void *data)
 	if (!(alloc = wlr_allocator_autocreate(backend, drw)))
 		die("couldn't recreate allocator");
 
-	wl_list_remove(&gpu_reset.link);
-	wl_signal_add(&drw->events.lost, &gpu_reset);
+	UNLISTEN(&gpu_reset);
+	LISTEN_GLOBAL(&drw->events.lost, gpu_reset);
 
 	wlr_compositor_set_renderer(compositor, drw);
 
@@ -2234,6 +2366,8 @@ resize(Client *c, struct wlr_box geo, int interact)
 	wlr_scene_subsurface_tree_set_clip(&c->scene_surface->node, &clip);
 }
 
+#else /*HOT*/
+
 void
 run(char *startup_cmd)
 {
@@ -2279,7 +2413,7 @@ run(char *startup_cmd)
 
 	/* At this point the outputs are initialized, choose initial selmon based on
 	 * cursor position, and set default cursor image */
-	selmon = xytomon(cursor->x, cursor->y);
+	selmon = TSYM(Monitor *(*)(double, double), xytomon)(cursor->x, cursor->y);
 
 	/* TODO hack to get cursor to display in its initial location (100, 100)
 	 * instead of (0, 0) and then jumping. Still may not be fully
@@ -2294,6 +2428,9 @@ run(char *startup_cmd)
 	 * frame events at the refresh rate, and so on. */
 	wl_display_run(dpy);
 }
+
+#endif
+#ifdef HOT
 
 void
 setcursor(struct wl_listener *listener, void *data)
@@ -2441,17 +2578,19 @@ setsel(struct wl_listener *listener, void *data)
 	wlr_seat_set_selection(seat, event->source, event->serial);
 }
 
+#else /*HOT*/
+
 void
 setup(void)
 {
 	int drm_fd, i, sig[] = {SIGCHLD, SIGINT, SIGTERM, SIGPIPE};
-	struct sigaction sa = {.sa_flags = SA_RESTART, .sa_handler = handlesig};
+	struct sigaction sa = {.sa_flags = SA_RESTART, .sa_handler = SYM(handlesig)};
 	sigemptyset(&sa.sa_mask);
 
 	for (i = 0; i < (int)LENGTH(sig); i++)
 		sigaction(sig[i], &sa, NULL);
 
-	wlr_log_init(log_level, NULL);
+	wlr_log_init(CSYM(enum wlr_log_importance, log_level), NULL);
 
 	/* The Wayland display is managed by libwayland. It handles accepting
 	 * clients from the Unix socket, manging Wayland globals, and so on. */
@@ -2467,7 +2606,7 @@ setup(void)
 
 	/* Initialize the scene graph used to lay out windows */
 	scene = wlr_scene_create();
-	root_bg = wlr_scene_rect_create(&scene->tree, 0, 0, rootcolor);
+	root_bg = wlr_scene_rect_create(&scene->tree, 0, 0, TSYM(float*, rootcolor));
 	for (i = 0; i < NUM_LAYERS; i++)
 		layers[i] = wlr_scene_tree_create(&scene->tree);
 	drag_icon = wlr_scene_tree_create(&scene->tree);
@@ -2479,7 +2618,7 @@ setup(void)
 	 * supports for shared memory, this configures that for clients. */
 	if (!(drw = wlr_renderer_autocreate(backend)))
 		die("couldn't create renderer");
-	wl_signal_add(&drw->events.lost, &gpu_reset);
+	LISTEN_GLOBAL(&drw->events.lost, gpu_reset);
 
 	/* Create shm, drm and linux_dmabuf interfaces by ourselves.
 	 * The simplest way is to call:
@@ -2526,24 +2665,24 @@ setup(void)
 
 	/* Initializes the interface used to implement urgency hints */
 	activation = wlr_xdg_activation_v1_create(dpy);
-	wl_signal_add(&activation->events.request_activate, &request_activate);
+	LISTEN_GLOBAL(&activation->events.request_activate, request_activate);
 
 	wlr_scene_set_gamma_control_manager_v1(scene, wlr_gamma_control_manager_v1_create(dpy));
 
 	power_mgr = wlr_output_power_manager_v1_create(dpy);
-	wl_signal_add(&power_mgr->events.set_mode, &output_power_mgr_set_mode);
+	LISTEN_GLOBAL(&power_mgr->events.set_mode, output_power_mgr_set_mode);
 
 	/* Creates an output layout, which is a wlroots utility for working with an
 	 * arrangement of screens in a physical layout. */
 	output_layout = wlr_output_layout_create(dpy);
-	wl_signal_add(&output_layout->events.change, &layout_change);
+	LISTEN_GLOBAL(&output_layout->events.change, layout_change);
 
     wlr_xdg_output_manager_v1_create(dpy, output_layout);
 
 	/* Configure a listener to be notified when new outputs are available on the
 	 * backend. */
 	wl_list_init(&mons);
-	wl_signal_add(&backend->events.new_output, &new_output);
+	LISTEN_GLOBAL(&backend->events.new_output, new_output);
 
 	/* Set up our client lists, the xdg-shell and the layer-shell. The xdg-shell is a
 	 * Wayland protocol which is used for application windows. For more
@@ -2555,19 +2694,19 @@ setup(void)
 	wl_list_init(&fstack);
 
 	xdg_shell = wlr_xdg_shell_create(dpy, 6);
-	wl_signal_add(&xdg_shell->events.new_toplevel, &new_xdg_toplevel);
-	wl_signal_add(&xdg_shell->events.new_popup, &new_xdg_popup);
+	LISTEN_GLOBAL(&xdg_shell->events.new_toplevel, new_xdg_toplevel);
+	LISTEN_GLOBAL(&xdg_shell->events.new_popup, new_xdg_popup);
 
 	layer_shell = wlr_layer_shell_v1_create(dpy, 3);
-	wl_signal_add(&layer_shell->events.new_surface, &new_layer_surface);
+	LISTEN_GLOBAL(&layer_shell->events.new_surface, new_layer_surface);
 
 	idle_notifier = wlr_idle_notifier_v1_create(dpy);
 
 	idle_inhibit_mgr = wlr_idle_inhibit_v1_create(dpy);
-	wl_signal_add(&idle_inhibit_mgr->events.new_inhibitor, &new_idle_inhibitor);
+	LISTEN_GLOBAL(&idle_inhibit_mgr->events.new_inhibitor, new_idle_inhibitor);
 
 	session_lock_mgr = wlr_session_lock_manager_v1_create(dpy);
-	wl_signal_add(&session_lock_mgr->events.new_lock, &new_session_lock);
+	LISTEN_GLOBAL(&session_lock_mgr->events.new_lock, new_session_lock);
 	locked_bg = wlr_scene_rect_create(layers[LyrBlock], sgeom.width, sgeom.height,
 			(float [4]){0.1f, 0.1f, 0.1f, 1.0f});
 	wlr_scene_node_set_enabled(&locked_bg->node, 0);
@@ -2577,10 +2716,10 @@ setup(void)
 			wlr_server_decoration_manager_create(dpy),
 			WLR_SERVER_DECORATION_MANAGER_MODE_SERVER);
 	xdg_decoration_mgr = wlr_xdg_decoration_manager_v1_create(dpy);
-	wl_signal_add(&xdg_decoration_mgr->events.new_toplevel_decoration, &new_xdg_decoration);
+	LISTEN_GLOBAL(&xdg_decoration_mgr->events.new_toplevel_decoration, new_xdg_decoration);
 
 	pointer_constraints = wlr_pointer_constraints_v1_create(dpy);
-	wl_signal_add(&pointer_constraints->events.new_constraint, &new_pointer_constraint);
+	LISTEN_GLOBAL(&pointer_constraints->events.new_constraint, new_pointer_constraint);
 
 	relative_pointer_mgr = wlr_relative_pointer_manager_v1_create(dpy);
 
@@ -2608,14 +2747,14 @@ setup(void)
 	 *
 	 * And more comments are sprinkled throughout the notify functions above.
 	 */
-	wl_signal_add(&cursor->events.motion, &cursor_motion);
-	wl_signal_add(&cursor->events.motion_absolute, &cursor_motion_absolute);
-	wl_signal_add(&cursor->events.button, &cursor_button);
-	wl_signal_add(&cursor->events.axis, &cursor_axis);
-	wl_signal_add(&cursor->events.frame, &cursor_frame);
+	LISTEN_GLOBAL(&cursor->events.motion, cursor_motion);
+	LISTEN_GLOBAL(&cursor->events.motion_absolute, cursor_motion_absolute);
+	LISTEN_GLOBAL(&cursor->events.button, cursor_button);
+	LISTEN_GLOBAL(&cursor->events.axis, cursor_axis);
+	LISTEN_GLOBAL(&cursor->events.frame, cursor_frame);
 
 	cursor_shape_mgr = wlr_cursor_shape_manager_v1_create(dpy, 1);
-	wl_signal_add(&cursor_shape_mgr->events.request_set_shape, &request_set_cursor_shape);
+	LISTEN_GLOBAL(&cursor_shape_mgr->events.request_set_shape, request_set_cursor_shape);
 
 	/*
 	 * Configures a seat, which is a single "seat" at which a user sits and
@@ -2623,27 +2762,27 @@ setup(void)
 	 * pointer, touch, and drawing tablet device. We also rig up a listener to
 	 * let us know when new input devices are available on the backend.
 	 */
-	wl_signal_add(&backend->events.new_input, &new_input_device);
+	LISTEN_GLOBAL(&backend->events.new_input, new_input_device);
 	virtual_keyboard_mgr = wlr_virtual_keyboard_manager_v1_create(dpy);
-	wl_signal_add(&virtual_keyboard_mgr->events.new_virtual_keyboard,
-			&new_virtual_keyboard);
+	LISTEN_GLOBAL(&virtual_keyboard_mgr->events.new_virtual_keyboard,
+			new_virtual_keyboard);
 	virtual_pointer_mgr = wlr_virtual_pointer_manager_v1_create(dpy);
-    wl_signal_add(&virtual_pointer_mgr->events.new_virtual_pointer,
-            &new_virtual_pointer);
+    LISTEN_GLOBAL(&virtual_pointer_mgr->events.new_virtual_pointer,
+            new_virtual_pointer);
 
 	seat = wlr_seat_create(dpy, "seat0");
-	wl_signal_add(&seat->events.request_set_cursor, &request_cursor);
-	wl_signal_add(&seat->events.request_set_selection, &request_set_sel);
-	wl_signal_add(&seat->events.request_set_primary_selection, &request_set_psel);
-	wl_signal_add(&seat->events.request_start_drag, &request_start_drag);
-	wl_signal_add(&seat->events.start_drag, &start_drag);
+	LISTEN_GLOBAL(&seat->events.request_set_cursor, request_cursor);
+	LISTEN_GLOBAL(&seat->events.request_set_selection, request_set_sel);
+	LISTEN_GLOBAL(&seat->events.request_set_primary_selection, request_set_psel);
+	LISTEN_GLOBAL(&seat->events.request_start_drag, request_start_drag);
+	LISTEN_GLOBAL(&seat->events.start_drag, start_drag);
 
-	kb_group = createkeyboardgroup();
+	kb_group = TSYM(KeyboardGroup *(*)(void), createkeyboardgroup)();
 	wl_list_init(&kb_group->destroy.link);
 
 	output_mgr = wlr_output_manager_v1_create(dpy);
-	wl_signal_add(&output_mgr->events.apply, &output_mgr_apply);
-	wl_signal_add(&output_mgr->events.test, &output_mgr_test);
+	LISTEN_GLOBAL(&output_mgr->events.apply, output_mgr_apply);
+	LISTEN_GLOBAL(&output_mgr->events.test, output_mgr_test);
 
 	/* Make sure XWayland clients don't connect to the parent X server,
 	 * e.g when running in the x11 backend or the wayland backend and the
@@ -2655,8 +2794,8 @@ setup(void)
 	 * It will be started when the first X client is started.
 	 */
 	if ((xwayland = wlr_xwayland_create(dpy, compositor, 1))) {
-		wl_signal_add(&xwayland->events.ready, &xwayland_ready);
-		wl_signal_add(&xwayland->events.new_surface, &new_xwayland_surface);
+		LISTEN_GLOBAL(&xwayland->events.ready, xwayland_ready);
+		LISTEN_GLOBAL(&xwayland->events.new_surface, new_xwayland_surface);
 
 		setenv("DISPLAY", xwayland->display_name, 1);
 	} else {
@@ -2664,6 +2803,9 @@ setup(void)
 	}
 #endif
 }
+
+#endif
+#ifdef HOT
 
 void
 spawn(const Arg *arg)
@@ -3146,8 +3288,8 @@ void
 dissociatex11(struct wl_listener *listener, void *data)
 {
 	Client *c = wl_container_of(listener, c, dissociate);
-	wl_list_remove(&c->map.link);
-	wl_list_remove(&c->unmap.link);
+	UNLISTEN(&c->map);
+	UNLISTEN(&c->unmap);
 }
 
 void
@@ -3182,17 +3324,141 @@ xwaylandready(struct wl_listener *listener, void *data)
 }
 #endif
 
+#else /* HOT */
+void*
+load(void)
+{
+    const char* path = get_module_path();
+    char load[PATH_MAX] = "/tmp/dwl.soXXXXXX";
+    void* new;
+
+    if (!path) {
+        fprintf(stderr, "cannot find dwl.so\n");
+    }
+
+    do {
+        mktemp(load);
+        errno = 0;
+        symlink(path, load);
+    } while(errno == EEXIST);
+
+    new = dlopen(load, RTLD_NOW|RTLD_LOCAL);
+
+    unlink(load);
+    if (new == NULL)
+        fprintf(stderr, "error while loading %s: %s\n", path, dlerror());
+    else
+        printf("loaded: %s\n", path);
+
+    return new;
+}
+
+const char *
+get_module_path(void) {
+    char home[PATH_MAX];
+    strcpy(home, getenv("HOME"));
+    strcat(home, "/.local/lib");
+    const char* abspaths[] = {".", home, "/usr/share/lib", "/usr/local/lib", "/usr/local/share/lib"};
+    const char* relpaths[] = {"", "/../lib"};
+    char paths[LENGTH(abspaths) + LENGTH(relpaths)][PATH_MAX];
+    static char out[PATH_MAX] = "./";
+
+    for (size_t i = 0; i < LENGTH(abspaths); i++)
+        realpath(abspaths[i], paths[i]);
+
+    for (size_t i = 0; i < LENGTH(relpaths); i++)
+    {
+        char tmp[PATH_MAX];
+        strcpy(tmp, runpath);
+        strcat(tmp, relpaths[i]);
+        realpath(tmp, paths[LENGTH(abspaths) + i]);
+    }
+
+
+
+    for (size_t i = 0; i < LENGTH(paths); i++)
+    {
+        char tmp[PATH_MAX];
+        printf("checking path: %s\n", paths[i]);
+        strcpy(tmp, paths[i]);
+        strcat(tmp, "/dwl.so");
+        if (access(tmp, F_OK|R_OK) == 0)
+        {
+            strcpy(out, tmp);
+            return out;
+        }
+    }
+
+    return NULL;
+}
+
+void
+reload(const Arg* arg)
+{
+    char* error;
+    void* new;
+    size_t i = 0;
+
+    // deinitialize previous module
+    if (last_module) {
+        // dlclose(last_module);
+        last_module = NULL;
+    }
+
+    wlr_log(WLR_INFO, "reloading");
+
+    new = load();
+
+    if (new == NULL)
+    {
+        wlr_log(WLR_ERROR, "couldn't load new dwl module from %s", get_module_path());
+
+        if (fork() == 0)
+            execl("/bin/env", "--", "notify-send", "-u", "low",  "failed to reload dwl", NULL);
+        return;
+    }
+
+    wlr_log(WLR_DEBUG, "---------- listens ---------");
+    for(listens* a = listeners; a != NULL; a = a->next)
+    {
+        Dl_info info;
+        void* old = a->listen->notify;
+        dladdr(a->listen->notify, &info);
+        a->listen->notify = dlsym(new, info.dli_sname);
+        if ((error = dlerror()) != NULL){
+            fprintf(stderr, "reload failure: %s", error);
+            a->listen->notify = old;
+            return;
+        }
+        wlr_log(WLR_DEBUG, "replaced listener: %s", info.dli_sname);
+        i++;
+    }
+
+    wlr_log(WLR_DEBUG, "----------  done!  ---------");
+    wlr_log(WLR_DEBUG, "replaced %zu listeners", i);
+
+    last_module = dwl_module;
+    dwl_module = new;
+
+    if (fork() == 0)
+        execl("/bin/env", "--", "notify-send", "-u", "low",  "reloaded dwl", NULL);
+
+}
+
 int
 main(int argc, char *argv[])
 {
 	char *startup_cmd = NULL;
 	int c;
 
+    runpath = dirname(argv[0]);
+    dwl_module = load();
+
 	while ((c = getopt(argc, argv, "s:hdv")) != -1) {
 		if (c == 's')
 			startup_cmd = optarg;
 		else if (c == 'd')
-			log_level = WLR_DEBUG;
+			CSYM(enum wlr_log_importance, log_level) = WLR_DEBUG;
 		else if (c == 'v')
 			die("dwl " VERSION);
 		else
@@ -3212,3 +3478,5 @@ main(int argc, char *argv[])
 usage:
 	die("Usage: %s [-v] [-d] [-s startup command]", argv[0]);
 }
+
+#endif
