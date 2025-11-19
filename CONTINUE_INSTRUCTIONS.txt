@@ -1,0 +1,8 @@
+Next steps for scenefx port:
+1. Work off branch hotreload-bar-attachtop-globalkey-restore-smartborders-sticky-unclutter-scenefx (currently same commit as hotreload-bar-attachtop-globalkey-restore-smartborders-sticky-unclutter).
+2. Port patches/scenefx.patch manually. The upstream patch rewrites Makefile, client.h, config.def.h, and large sections of dwl.c (macros, globals, arrange/mapnotify/setfullscreen/setup/render paths). You’ll need to replicate its functionality in our hotreload/bar tree:
+   - update Makefile to add the additional shader/rounded-corner objects while retaining our pixman/fcft/-fPIC/-rdynamic settings and dwl.so target.
+   - merge client.h changes (new clip logic, render helpers) with the current version that already has hotreload/bar adjustments.
+   - extend config.def.h with the scenefx color and round-border config while keeping our smartborders/sticky/cursor_timeout settings.
+   - weave the dwl.c diffs (rounded borders, drop shadows, gamma adjustments) into the already-modified file: pay extra attention to the top-level macros, struct definitions (Client/Monitor), global variables, focus routines, mapnotify, setfullscreen, arrange, render loop, and listener wiring. Expect manual edits and re-testing.
+3. Once scenefx is ported and builds, add the patch file back under patches/ (or note how to regenerate it) and commit the result on this branch.
