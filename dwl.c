@@ -319,10 +319,20 @@ static void arrangelayer(Monitor *m, struct wl_list *list,
 static void arrangelayers(Monitor *m);
 static void axisnotify(struct wl_listener *listener, void *data);
 static bool baracceptsinput(struct wlr_scene_buffer *buffer, double *sx, double *sy);
+
+#undef static
+#define static extern
+#endif
+
+/* buffer functions need to be declared outside HOT for buffer_impl initialization */
 static void bufdestroy(struct wlr_buffer *buffer);
 static bool bufdatabegin(struct wlr_buffer *buffer, uint32_t flags,
 		void **data, uint32_t *format, size_t *stride);
 static void bufdataend(struct wlr_buffer *buffer);
+
+#ifdef HOT
+#undef static
+#define static
 static Buffer *bufmon(Monitor *m);
 static void bufrelease(struct wl_listener *listener, void *data);
 static void buttonpress(struct wl_listener *listener, void *data);
@@ -372,15 +382,26 @@ static void destroysessionlock(struct wl_listener *listener, void *data);
 static void destroykeyboardgroup(struct wl_listener *listener, void *data);
 static Monitor *dirtomon(enum wlr_direction dir);
 static void drawbar(Monitor *m);
+
+#undef static
+#define static extern
+#endif
+
+/* functions used in run() need to be declared outside HOT */
 static void drawbars(void);
+static void handlecursoractivity(void);
+static int hidecursor(void *data);
+static Monitor *xytomon(double x, double y);
+
+#ifdef HOT
+#undef static
+#define static
 static void focusclient(Client *c, int lift);
 static void focusmon(const Arg *arg);
 static void focusstack(const Arg *arg);
 static Client *focustop(Monitor *m);
 static void fullscreennotify(struct wl_listener *listener, void *data);
 static void gpureset(struct wl_listener *listener, void *data);
-static void handlecursoractivity(void);
-static int hidecursor(void *data);
 static void handlesig(int signo);
 static void incnmaster(const Arg *arg);
 static void inputdevice(struct wl_listener *listener, void *data);
@@ -441,13 +462,15 @@ static void setsel(struct wl_listener *listener, void *data);
 /* this is cold */
 static void setup(void);
 
+/* statusin used in setup() */
+static int statusin(int fd, unsigned int mask, void *data);
+
 #ifdef HOT
 #undef static
 #define static
 
 static void spawn(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
-static int statusin(int fd, unsigned int mask, void *data);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
@@ -467,7 +490,6 @@ static void urgent(struct wl_listener *listener, void *data);
 static void view(const Arg *arg);
 static void virtualkeyboard(struct wl_listener *listener, void *data);
 static void virtualpointer(struct wl_listener *listener, void *data);
-static Monitor *xytomon(double x, double y);
 static void xytonode(double x, double y, struct wlr_surface **psurface,
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 static void zoom(const Arg *arg);
@@ -547,15 +569,15 @@ static Monitor *selmon;
 static char stext[256];
 static struct wl_event_source *status_event_source;
 
+#ifdef HOT
+#undef static
+#define static
+
 static const struct wlr_buffer_impl buffer_impl = {
 	.destroy = bufdestroy,
 	.begin_data_ptr_access = bufdatabegin,
 	.end_data_ptr_access = bufdataend,
 };
-
-#ifdef HOT
-#undef static
-#define static
 
 /* global event handlers */
 static struct wl_listener cursor_axis = {.notify = axisnotify};
@@ -2757,6 +2779,36 @@ run(char *startup_cmd)
 	 * loop configuration to listen to libinput events, DRM events, generate
 	 * frame events at the refresh rate, and so on. */
 	wl_display_run(dpy);
+}
+
+void
+drawbars(void)
+{
+	TSYM(void (*)(void), drawbars)();
+}
+
+void
+handlecursoractivity(void)
+{
+	TSYM(void (*)(void), handlecursoractivity)();
+}
+
+int
+hidecursor(void *data)
+{
+	return TSYM(int (*)(void *), hidecursor)(data);
+}
+
+int
+statusin(int fd, unsigned int mask, void *data)
+{
+	return TSYM(int (*)(int, unsigned int, void *), statusin)(fd, mask, data);
+}
+
+Monitor *
+xytomon(double x, double y)
+{
+	return TSYM(Monitor *(*)(double, double), xytomon)(x, y);
 }
 
 #endif
