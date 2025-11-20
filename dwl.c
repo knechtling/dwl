@@ -3374,7 +3374,9 @@ setup(void)
 	activation = wlr_xdg_activation_v1_create(dpy);
 	LISTEN_GLOBAL(&activation->events.request_activate, request_activate);
 
-	wlr_scene_set_gamma_control_manager_v1(scene, wlr_gamma_control_manager_v1_create(dpy));
+	/* Note: scenefx's wlr_scene_create() already initializes gamma control,
+	 * so we don't call wlr_scene_set_gamma_control_manager_v1 here */
+	wlr_gamma_control_manager_v1_create(dpy);
 
 	power_mgr = wlr_output_power_manager_v1_create(dpy);
 	LISTEN_GLOBAL(&power_mgr->events.set_mode, output_power_mgr_set_mode);
