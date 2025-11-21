@@ -8,6 +8,8 @@ static const int sloppyfocus               = 1;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
 static const unsigned int borderpx         = 1;  /* border pixel of windows */
 static const int smartborders              = 1;  /* draw borders only when needed */
+static const unsigned int systrayspacing   = 2;  /* systray spacing */
+static const int showsystray               = 1;  /* 0 means no systray */
 static const int showbar                   = 1;  /* 0 means no bar */
 static const int topbar                    = 1;  /* 0 means bottom bar */
 static const char *fonts[]                 = {"monospace:size=10"};
@@ -141,6 +143,7 @@ static const int cursor_timeout = 5;
 /* commands */
 static const char *termcmd[] = { "foot", NULL };
 static const char *menucmd[] = { "wmenu-run", NULL };
+static const char *dmenucmd[] = { "wmenu", NULL };
 
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = { "s", "foot", "-T", "scratchpad", NULL };
