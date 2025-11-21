@@ -183,6 +183,7 @@ typedef struct {
 	unsigned int bw;
 	uint32_t tags;
 	int isfloating, isurgent, isfullscreen, issticky;
+	char scratchkey;
 	uint32_t resize; /* configure serial of a pending resize */
 } Client;
 
@@ -296,6 +297,7 @@ typedef struct {
 	uint32_t tags;
 	int isfloating;
 	int monitor;
+	const char scratchkey;
 } Rule;
 
 typedef struct {
@@ -482,8 +484,10 @@ static int statusin(int fd, unsigned int mask, void *data);
 #define static
 
 static void spawn(const Arg *arg);
+static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
 static void tag(const Arg *arg);
+static void togglescratch(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
@@ -720,10 +724,13 @@ applyrules(Client *c)
 	appid = client_get_appid(c);
 	title = client_get_title(c);
 
+	c->scratchkey = 0;
+
 	for (r = rules; r < END(rules); r++) {
 		if ((!r->title || strstr(title, r->title))
 				&& (!r->id || strstr(appid, r->id))) {
 			c->isfloating = r->isfloating;
+			c->scratchkey = r->scratchkey;
 			newtags |= r->tags;
 			i = 0;
 			wl_list_for_each(m, &mons, link) {
@@ -3401,6 +3408,18 @@ spawn(const Arg *arg)
 }
 
 void
+spawnscratch(const Arg *arg)
+{
+	if (fork() == 0) {
+		close(STDIN_FILENO);
+		dup2(STDERR_FILENO, STDOUT_FILENO);
+		setsid();
+		execvp(((char **)arg->v)[1], ((char **)arg->v) + 1);
+		die("dwl: execvp %s failed:", ((char **)arg->v)[1]);
+	}
+}
+
+void
 startdrag(struct wl_listener *listener, void *data)
 {
 	struct wlr_drag *drag = data;
@@ -3439,7 +3458,8 @@ void
 tag(const Arg *arg)
 {
 	Client *sel = focustop(selmon);
-	if (!sel || (arg->ui & TAGMASK) == 0)
+
+	if (!sel || (arg->ui & TAGMASK) == sel->tags)
 		return;
 
 	sel->tags = arg->ui & TAGMASK;
@@ -3449,9 +3469,37 @@ tag(const Arg *arg)
 }
 
 void
+togglescratch(const Arg *arg)
+{
+	Client *c;
+	unsigned int found = 0;
+
+	/* search for first window that matches the scratchkey */
+	wl_list_for_each(c, &clients, link) {
+		if (c->scratchkey == ((char **)arg->v)[0][0]) {
+			found = 1;
+			break;
+		}
+	}
+
+	if (found) {
+		int visible = VISIBLEON(c, selmon);
+		if (!visible && c->mon != selmon)
+			setmon(c, selmon, selmon->tagset[selmon->seltags]);
+		c->tags = visible ? 0 : selmon->tagset[selmon->seltags];
+
+		focusclient(c->tags == 0 ? focustop(selmon) : c, 1);
+		arrange(selmon);
+	} else {
+		spawnscratch(arg);
+	}
+}
+
+void
 tagmon(const Arg *arg)
 {
 	Client *sel = focustop(selmon);
+
 	if (!sel)
 		return;
 	setmon(sel, dirtomon(arg->i), 0);
