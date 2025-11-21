@@ -81,9 +81,11 @@
 #include <xcb/xcb_icccm.h>
 #endif
 
-
+#include "dbus.h"
 #include "util.h"
 #include "drwl.h"
+#include "systray/tray.h"
+#include "systray/watcher.h"
 
 /* macros */
 #define MAX(A, B)               ((A) > (B) ? (A) : (B))
@@ -127,7 +129,7 @@ enum { SchemeNorm, SchemeSel, SchemeUrg }; /* color schemes */
 enum { CurNormal, CurPressed, CurMove, CurResize }; /* cursor */
 enum { XDGShell, LayerShell, X11 }; /* client types */
 enum { LyrBg, LyrBottom, LyrTile, LyrFloat, LyrTop, LyrFS, LyrOverlay, LyrBlock, NUM_LAYERS }; /* scene layers */
-enum { ClkTagBar, ClkLtSymbol, ClkStatus, ClkTitle, ClkClient, ClkRoot }; /* clicks */
+enum { ClkTagBar, ClkLtSymbol, ClkStatus, ClkTitle, ClkClient, ClkRoot, ClkTray }; /* clicks */
 
 typedef union {
 	int i;
@@ -254,6 +256,7 @@ struct Monitor {
 		int real_width, real_height; /* non-scaled */
 		float scale;
 	} b; /* bar area */
+	Tray *tray;
 	struct wlr_box w; /* window area, layout-relative */
 	struct wl_list layers[4]; /* LayerSurface.link */
 	const Layout *lt[2];
@@ -487,8 +490,12 @@ static void spawn(const Arg *arg);
 static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
 static void tag(const Arg *arg);
-static void togglescratch(const Arg *arg);
 static void tagmon(const Arg *arg);
+static void togglescratch(const Arg *arg);
+static void toggletag(const Arg *arg);
+static void trayactivate(const Arg *arg);
+static void traymenu(const Arg *arg);
+static void traynotify(void *data);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -590,6 +597,10 @@ static const Menu *menu_current;
 static int menu_fd;
 static pid_t menu_pid;
 static struct wl_event_source *menu_source;
+
+static DBusConnection *bus_conn;
+static struct wl_event_source *bus_source;
+static Watcher watcher = {.running = 0};
 
 #ifdef HOT
 #undef static
@@ -1052,6 +1063,14 @@ void
 cleanup(void)
 {
 	TSYM(void (*)(void), cleanuplisteners)();
+
+	if (watcher.running)
+		watcher_stop(&watcher);
+	if (bus_conn) {
+		stopbus(bus_conn, bus_source);
+		dbus_connection_unref(bus_conn);
+	}
+
 #ifdef XWAYLAND
 	wlr_xwayland_destroy(xwayland);
 	xwayland = NULL;
@@ -1096,6 +1115,9 @@ cleanupmon(struct wl_listener *listener, void *data)
 		if (m->pool[i])
 			wlr_buffer_drop(&m->pool[i]->base);
 	}
+
+	if (showsystray && m->tray)
+		destroytray(m->tray);
 
 	drwl_setimage(m->drw, NULL);
 	drwl_destroy(m->drw);
@@ -3369,6 +3391,15 @@ setup(void)
 
 	drwl_init();
 
+	bus_conn = dbus_bus_get(DBUS_BUS_SESSION, NULL);
+	if (!bus_conn)
+		die("Failed to connect to bus");
+	bus_source = startbus(bus_conn, event_loop);
+	if (!bus_source)
+		die("Failed to start listening to bus events");
+	if (CSYM(int, showbar) && CSYM(int, showsystray))
+		watcher_start(&watcher, bus_conn, event_loop);
+
 	status_event_source = wl_event_loop_add_fd(wl_display_get_event_loop(dpy),
 		STDIN_FILENO, WL_EVENT_READABLE, statusin, NULL);
 
@@ -3608,6 +3639,26 @@ toggleview(const Arg *arg)
 }
 
 void
+trayactivate(const Arg *arg)
+{
+	tray_leftclicked(selmon->tray, arg->ui);
+}
+
+void
+traymenu(const Arg *arg)
+{
+	tray_rightclicked(selmon->tray, arg->ui, dmenucmd);
+}
+
+void
+traynotify(void *data)
+{
+	Monitor *m = data;
+
+	drawbar(m);
+}
+
+void
 unlocksession(struct wl_listener *listener, void *data)
 {
 	SessionLock *lock = wl_container_of(listener, lock, unlock);
@@ -3800,6 +3851,17 @@ updatebar(Monitor *m)
 	m->lrpad = m->drw->font->height;
 	m->b.height = m->drw->font->height + 2;
 	m->b.real_height = (int)((float)m->b.height / m->wlr_output->scale);
+
+	if (showsystray) {
+		Tray *tray;
+		if (m->tray)
+			destroytray(m->tray);
+		tray = createtray(m, m->b.height, systrayspacing, colors[SchemeNorm], fonts, fontattrs, &traynotify, &watcher);
+		if (!tray)
+			die("Couldn't create tray for monitor");
+		m->tray = tray;
+		wl_list_insert(&watcher.trays, &tray->link);
+	}
 }
 
 void
