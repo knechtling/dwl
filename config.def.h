@@ -44,11 +44,14 @@ static const Menu menus[] = {
 
 /* NOTE: ALWAYS keep a rule declared even if you don't use rules (e.g leave at least one example) */
 static const Rule rules[] = {
-	/* app_id             title       tags mask     isfloating   monitor scratchkey */
+	/* app_id             title         tags mask     isfloating   monitor scratchkey */
 	/* examples: */
-	{ "Gimp_EXAMPLE",     NULL,       0,            1,           -1,     0   }, /* Start on currently visible tags floating, not tiled */
-	{ "firefox_EXAMPLE",  NULL,       1 << 8,       0,           -1,     0   }, /* Start on ONLY tag "9" */
-	{ NULL,               "scratchpad", 0,          1,           -1,     's' },
+	{ "Gimp_EXAMPLE",     NULL,         0,            1,           -1,     0   }, /* Start on currently visible tags floating, not tiled */
+	{ NULL,               "floating",   0,            1,           -1,     0   },
+	{ "firefox_EXAMPLE",  NULL,         1 << 8,       0,           -1,     0   }, /* Start on ONLY tag "9" */
+	{ NULL,               "scratchpad", 0,            1,           -1,     's' },
+	{ NULL,               "Bitwarden",  0,            1,           -1,     'p' },
+	{ NULL,               "scratchnet", 0,            1,           -1,     'n' },
 };
 
 /* layout(s) */
@@ -82,6 +85,10 @@ static const struct xkb_rule_names xkb_rules = {
 	*/
 	.options = NULL,
 };
+
+/* numlock and capslock */
+static const int numlock = 0;
+static const int capslock = 0;
 
 static const int repeat_rate = 25;
 static const int repeat_delay = 600;
@@ -132,7 +139,7 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 static const int cursor_timeout = 5;
 
 /* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
-#define MODKEY WLR_MODIFIER_ALT
+#define MODKEY WLR_MODIFIER_LOGO
 
 #define TAGKEYS(KEY,SKEY,TAG) \
 	{ MODKEY,                    KEY,            view,            {.ui = 1 << TAG} }, \
@@ -140,16 +147,20 @@ static const int cursor_timeout = 5;
 	{ MODKEY|WLR_MODIFIER_SHIFT, SKEY,           tag,             {.ui = 1 << TAG} }, \
 	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT,SKEY,toggletag, {.ui = 1 << TAG} }
 
+#define TERMINAL "foot"
+
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
-static const char *termcmd[] = { "foot", NULL };
+static const char *termcmd[] = { TERMINAL, NULL };
 static const char *menucmd[] = { "wmenu-run", NULL };
 static const char *dmenucmd[] = { "wmenu", NULL };
 
 /* named scratchpads - First arg only serves to match against key in rules*/
-static const char *scratchpadcmd[] = { "s", "foot", "-T", "scratchpad", NULL };
+static const char *scratchpadcmd[]  = { "s", TERMINAL, "-T", "scratchpad", NULL };
+static const char *scratchpasscmd[] = { "p", "bitwarden-desktop", NULL };
+static const char *scratchnetcmd[]  = { "n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL };
 static const char *screenshotcmd[] = { "/home/anton/.local/bin/screenshot.sh", NULL };
 static const char *screenshotselcmd[] = { "/home/anton/.local/bin/screenshot.sh", "-s", NULL };
 static const char *screenshotselcopycmd[] = { "/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL };
@@ -169,7 +180,10 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_d,          spawn,          {.v = menucmd} },
 	{ MODKEY,                    XKB_KEY_Return,     spawn,          {.v = termcmd} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Return,     togglescratch,  {.v = scratchpadcmd} },
-	{ MODKEY,                    XKB_KEY_b,          togglebar,      {0} },
+{ MODKEY,                    XKB_KEY_b,          togglebar,      {0} },
+{ MODKEY,                    XKB_KEY_c,          spawn,          SHCMD("cliphist list | wmenu | cliphist decode | wl-copy") },
+{ MODKEY,                    XKB_KEY_BackSpace,  spawn,          {.v = (const char*[]){"sysact", NULL}} },
+{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_s,          spawn,          SHCMD("$HOME/.local/bin/dwl-startup.sh") },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_R,          reload,         {0} },
 	// windows
 	{ MODKEY,                    XKB_KEY_j,          focusstack,     {.i = +1} },
@@ -179,16 +193,24 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_h,          setmfact,       {.f = -0.05f} },
 	{ MODKEY,                    XKB_KEY_l,          setmfact,       {.f = +0.05f} },
 	{ MODKEY,                    XKB_KEY_Return,     zoom,           {0} },
-	{ MODKEY,                    XKB_KEY_Tab,        view,           {0} },
+{ MODKEY,                    XKB_KEY_Tab,        view,           {0} },
+{ MODKEY,                    XKB_KEY_F3,         spawn,          {.v = (const char*[]){"displayselect", NULL}} },
 	{ MODKEY,                    XKB_KEY_g,          togglegaps,     {0} },
 	{ MODKEY,                    XKB_KEY_q,          killclient,     {0} },
-	{ MODKEY,                    XKB_KEY_y,          togglefullscreen, {0} },
+{ MODKEY,                    XKB_KEY_y,          togglefullscreen, {0} },
+{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_p,          togglescratch,  {.v = scratchpasscmd} },
+{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_n,          togglescratch,  {.v = scratchnetcmd} },
 	// layouts
 	{ MODKEY,                    XKB_KEY_t,          setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                    XKB_KEY_f,          setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                    XKB_KEY_m,          setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                    XKB_KEY_space,      setlayout,      {0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,      togglefloating, {0} },
+{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,      togglefloating, {0} },
+{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_u,          spawn,          {.v = (const char*[]){"/home/anton/.local/bin/dmenuhandler", NULL}} },
+{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_m,          spawn,          {.v = (const char*[]){"/home/anton/.local/bin/dmenumountcifs", NULL}} },
+{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_w,          spawn,          {.v = (const char*[]){"/home/anton/.local/bin/weblaunch", NULL}} },
+{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_p,          spawn,          {.v = (const char*[]){"/home/anton/.local/bin/maimpick-wl", NULL}} },
+{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_r,          spawn,          {.v = (const char*[]){"/home/anton/.local/bin/dmenurecord", NULL}} },
 	// menus
 	{ MODKEY,                    XKB_KEY_o,          menu,           {.v = &menus[0]} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_O,          menu,           {.v = &menus[1]} },
