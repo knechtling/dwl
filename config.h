@@ -150,6 +150,9 @@ static const char *dmenucmd[] = { "wmenu", NULL };
 
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = { "s", "foot", "-T", "scratchpad", NULL };
+static const char *screenshotcmd[] = { "/home/anton/.local/bin/screenshot.sh", NULL };
+static const char *screenshotselcmd[] = { "/home/anton/.local/bin/screenshot.sh", "-s", NULL };
+static const char *screenshotselcopycmd[] = { "/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL };
 
 #define ADDPASSRULE(S, K) {.appid = S, .len = LENGTH(S), .key = K}
 static const PassKeypressRule pass_rules[] = {
@@ -162,11 +165,13 @@ static const PassKeypressRule pass_rules[] = {
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
 	/* modifier                  key                 function        argument */
-	{ MODKEY,                    XKB_KEY_p,          spawn,          {.v = menucmd} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Return,     spawn,          {.v = termcmd} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Z,          togglescratch,  {.v = scratchpadcmd} },
+	// system
+	{ MODKEY,                    XKB_KEY_d,          spawn,          {.v = menucmd} },
+	{ MODKEY,                    XKB_KEY_Return,     spawn,          {.v = termcmd} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Return,     togglescratch,  {.v = scratchpadcmd} },
 	{ MODKEY,                    XKB_KEY_b,          togglebar,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_R,          reload,         {0} },
+	// windows
 	{ MODKEY,                    XKB_KEY_j,          focusstack,     {.i = +1} },
 	{ MODKEY,                    XKB_KEY_k,          focusstack,     {.i = -1} },
 	{ MODKEY,                    XKB_KEY_i,          incnmaster,     {.i = +1} },
@@ -176,15 +181,21 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_Return,     zoom,           {0} },
 	{ MODKEY,                    XKB_KEY_Tab,        view,           {0} },
 	{ MODKEY,                    XKB_KEY_g,          togglegaps,     {0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_C,          killclient,     {0} },
-	{ MODKEY,                    XKB_KEY_o,          menu,           {.v = &menus[0]} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_O,          menu,           {.v = &menus[1]} },
+	{ MODKEY,                    XKB_KEY_q,          killclient,     {0} },
+	{ MODKEY,                    XKB_KEY_y,          togglefullscreen, {0} },
+	// layouts
 	{ MODKEY,                    XKB_KEY_t,          setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                    XKB_KEY_f,          setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                    XKB_KEY_m,          setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                    XKB_KEY_space,      setlayout,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,      togglefloating, {0} },
-	{ MODKEY,                    XKB_KEY_e,         togglefullscreen, {0} },
+	// menus
+	{ MODKEY,                    XKB_KEY_o,          menu,           {.v = &menus[0]} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_O,          menu,           {.v = &menus[1]} },
+	{ 0,                         XKB_KEY_F8,         spawn,          {.v = screenshotcmd} },
+	{ WLR_MODIFIER_SHIFT,        XKB_KEY_F8,         spawn,          {.v = screenshotselcmd} },
+	{ WLR_MODIFIER_CTRL,         XKB_KEY_F8,         spawn,          {.v = screenshotselcopycmd} },
+	// tags
 	{ MODKEY,                    XKB_KEY_0,          view,           {.ui = ~0} },
 	{ MODKEY,                    XKB_KEY_o,          winview,        {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_parenright, tag,            {.ui = ~0} },
