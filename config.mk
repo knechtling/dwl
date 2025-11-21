@@ -27,7 +27,7 @@ WLR_LIBS = `$(PKG_CONFIG) --libs wlroots-0.19`
 XWAYLAND =
 XLIBS =
 # Uncomment to build XWayland support
-#XWAYLAND = -DXWAYLAND
+XWAYLAND = -DXWAYLAND
 #XLIBS = xcb xcb-icccm
 
 # dwl itself only uses C99 features, but wlroots' headers use anonymous unions (C11).
