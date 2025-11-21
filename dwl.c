@@ -307,6 +307,12 @@ typedef struct {
 	struct wl_listener destroy;
 } SessionLock;
 
+typedef struct {
+	const char *cmd;            /* command to run a menu */
+	void (*feed)(FILE *f);      /* feed input to menu */
+	void (*action)(char *line); /* do action based on menu output */
+} Menu;
+
 #define static 
 
 #ifdef HOT
@@ -414,6 +420,12 @@ static void killclient(const Arg *arg);
 static void locksession(struct wl_listener *listener, void *data);
 static void mapnotify(struct wl_listener *listener, void *data);
 static void maximizenotify(struct wl_listener *listener, void *data);
+static void menu(const Arg *arg);
+static int menuread(int fd, uint32_t mask, void *data);
+static void menuwinfeed(FILE *f);
+static void menuwinaction(char *line);
+static void menulayoutfeed(FILE *f);
+static void menulayoutaction(char *line);
 static void monocle(Monitor *m);
 static void motionabsolute(struct wl_listener *listener, void *data);
 static void motionnotify(uint32_t time, struct wlr_input_device *device, double sx,
@@ -568,6 +580,11 @@ static Monitor *selmon;
 
 static char stext[256];
 static struct wl_event_source *status_event_source;
+
+static const Menu *menu_current;
+static int menu_fd;
+static pid_t menu_pid;
+static struct wl_event_source *menu_source;
 
 #ifdef HOT
 #undef static
@@ -2344,6 +2361,145 @@ maximizenotify(struct wl_listener *listener, void *data)
 			&& wl_resource_get_version(c->surface.xdg->toplevel->resource)
 					< XDG_TOPLEVEL_WM_CAPABILITIES_SINCE_VERSION)
 		wlr_xdg_surface_schedule_configure(c->surface.xdg);
+}
+
+void
+menu(const Arg *arg)
+{
+	FILE *f;
+	int fd_right[2], fd_left[2];
+
+	if (menu_current != NULL) {
+		wl_event_source_remove(menu_source);
+		close(menu_fd);
+		kill(menu_pid, SIGTERM);
+		menu_current = NULL;
+		if (!arg->v)
+			return;
+	}
+
+	if (pipe(fd_right) == -1 || pipe(fd_left) == -1)
+		return;
+	if ((menu_pid = fork()) == -1)
+		return;
+	if (menu_pid == 0) {
+		close(fd_right[1]);
+		close(fd_left[0]);
+		dup2(fd_right[0], STDIN_FILENO);
+		close(fd_right[0]);
+		dup2(fd_left[1], STDOUT_FILENO);
+		close(fd_left[1]);
+		execl("/bin/sh", "/bin/sh", "-c", ((Menu *)(arg->v))->cmd, NULL);
+		die("dwl: execl %s failed:", "/bin/sh");
+	}
+
+	close(fd_right[0]);
+	close(fd_left[1]);
+	menu_fd = fd_left[0];
+	if (fd_set_nonblock(menu_fd) == -1)
+		return;
+	if (!(f = fdopen(fd_right[1], "w")))
+		return;
+	menu_current = arg->v;
+	menu_current->feed(f);
+	fclose(f);
+	menu_source = wl_event_loop_add_fd(event_loop,
+			menu_fd, WL_EVENT_READABLE, menuread, NULL);
+}
+
+int
+menuread(int fd, uint32_t mask, void *data)
+{
+	char *s;
+	int n;
+	static char line[512];
+	static int i = 0;
+
+	if (mask & (WL_EVENT_HANGUP | WL_EVENT_ERROR)) {
+		i = 0;
+		menu(&(const Arg){ .v = NULL });
+		return 0;
+	}
+	if ((n = read(menu_fd, line + i, LENGTH(line) - 1 - i)) == -1) {
+		if (errno != EAGAIN) {
+			i = 0;
+			menu(&(const Arg){ .v = NULL });
+		}
+		return 0;
+	}
+	line[i + n] = '\0';
+	if (!(s = strchr(line + i, '\n'))) {
+		i += n;
+		return 0;
+	}
+	i = 0;
+	*s = '\0';
+	menu_current->action(line);
+	return 0;
+}
+
+void
+menuwinfeed(FILE *f)
+{
+	Client *c;
+	const char *title, *appid;
+
+	wl_list_for_each(c, &fstack, flink) {
+		if (!(title = client_get_title(c)))
+			continue;
+		fprintf(f, "%s", title);
+		if ((appid = client_get_appid(c)))
+			fprintf(f, " | %s", appid);
+		fputc('\n', f);
+	}
+}
+
+void
+menuwinaction(char *line)
+{
+	Client *c;
+	const char *appid, *title;
+	static char buf[512];
+
+	wl_list_for_each(c, &fstack, flink) {
+		if (!(title = client_get_title(c)))
+			continue;
+		appid = client_get_appid(c);
+		snprintf(buf, LENGTH(buf) - 1, "%s%s%s",
+				title, appid ? " | " : "", appid ? appid : "");
+		if (strcmp(line, buf) == 0)
+			goto found;
+	}
+	return;
+
+found:
+	if (!c->mon)
+		return;
+	wl_list_remove(&c->flink);
+	wl_list_insert(&fstack, &c->flink);
+	selmon = c->mon;
+	view(&(const Arg){ .ui = c->tags });
+}
+
+void
+menulayoutfeed(FILE *f)
+{
+	const Layout *l;
+	for (l = layouts; l < END(layouts); l++)
+		fprintf(f, "%s\n", l->symbol);
+}
+
+void
+menulayoutaction(char *line)
+{
+	const Layout *l;
+	for (l = layouts; l < END(layouts); l++)
+		if (strcmp(line, l->symbol) == 0)
+			goto found;
+	return;
+
+found:
+	setlayout(&(const Arg){ .v = l });
 }
 
 void
