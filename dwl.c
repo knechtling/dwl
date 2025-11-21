@@ -502,6 +502,7 @@ static void urgent(struct wl_listener *listener, void *data);
 static void view(const Arg *arg);
 static void virtualkeyboard(struct wl_listener *listener, void *data);
 static void virtualpointer(struct wl_listener *listener, void *data);
+static void winview(const Arg *a);
 static void xytonode(double x, double y, struct wlr_surface **psurface,
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 static void zoom(const Arg *arg);
@@ -3788,6 +3789,19 @@ view(const Arg *arg)
 	focusclient(focustop(selmon), 1);
 	arrange(selmon);
 	drawbars();
+}
+
+void
+winview(const Arg *a)
+{
+	Arg b = {0};
+	Client *sel = focustop(selmon);
+
+	if (!sel)
+		return;
+
+	b.ui = sel->tags;
+	view(&b);
 }
 
 void
