@@ -13,7 +13,7 @@ static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will 
 static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
 static int gaps = 1;                            /* 1 means gaps between windows are added */
 static const unsigned int gappx = 10;           /* gap pixel between windows */
-static const unsigned int borderpx = 2;         /* border pixel of windows */
+static const unsigned int borderpx = 3;         /* border pixel of windows */
 static const int smartborders              = 1;  /* draw borders only when needed */
 static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const int showsystray = 1;               /* 0 means no systray */
@@ -54,7 +54,9 @@ static const Rule rules[] = {
     /* app_id             title         tags mask     isfloating   monitor scratchkey */
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'},
+    {NULL, "Bitwarden", 0, 1, -1, 'p'},
+    {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -187,7 +189,7 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_d, spawn, {.v = menucmd}},
     {MODKEY, XKB_KEY_Return, spawn, {.v = termcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Return, togglescratch, {.v = scratchpadcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_P, togglescratch, {.v = scratchpasscmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_L, togglescratch, {.v = scratchpasscmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
