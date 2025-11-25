@@ -13,7 +13,8 @@ static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will 
 static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
 static int gaps = 1;                            /* 1 means gaps between windows are added */
 static const unsigned int gappx = 10;           /* gap pixel between windows */
-static const unsigned int borderpx = 2;         /* border pixel of windows */
+static const unsigned int borderpx = 3;         /* border pixel of windows */
+static const int smartborders              = 1;  /* draw borders only when needed */
 static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const int showsystray = 1;               /* 0 means no systray */
 static const int showbar = 1;                   /* 0 means no bar */
@@ -45,7 +46,6 @@ static const Menu menus[] = {
      */
     {"wmenu -i -l 10 -p Windows", menuwinfeed, menuwinaction},
     {"wmenu -i -p Layouts", menulayoutfeed, menulayoutaction},
-    {"wmenu -i -l 10 -p Rules", menurulefeed, menuruleaction},
 };
 
 /* NOTE: ALWAYS keep a rule declared even if you don't use rules (e.g leave at
@@ -54,7 +54,9 @@ static const Rule rules[] = {
     /* app_id             title         tags mask     isfloating   monitor scratchkey */
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'},
+    {NULL, "Bitwarden", 0, 1, -1, 'p'},
+    {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -142,6 +144,8 @@ LIBINPUT_CONFIG_TAP_MAP_LMR -- 1/2/3 finger tap maps to left/middle/right
 */
 static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TAP_MAP_LRM;
 
+static const int cursor_timeout = 5;
+
 /* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
 #define MODKEY WLR_MODIFIER_LOGO
 
@@ -156,6 +160,14 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
   {                                                                                                                                                  \
     .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                                                                                             \
   }
+
+#define ADDPASSRULE(S, K) {.appid = S, .len = LENGTH(S), .key = K}
+static const PassKeypressRule pass_rules[] = {
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
+	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
+	ADDPASSRULE("WebCord", XKB_KEY_n),
+};
 
 /* commands */
 static const char *termcmd[] = {TERMINAL, NULL};
@@ -188,6 +200,7 @@ static const Key keys[] = {
     // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
     // {MODKEY, XKB_KEY_F2, spawn, {.v = (const char *[]){"tutorialvids", NULL}}},
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
+    {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F5, reload, {0}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_u, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_m, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_w, spawn, {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
@@ -257,7 +270,6 @@ static const Key keys[] = {
     // menus
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_o, menu, {.v = &menus[1]}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_r, menu, {.v = &menus[2]}},
     // tags
     {MODKEY, XKB_KEY_0, view, {.ui = ~0}},
     {MODKEY, XKB_KEY_v, winview, {0}},
