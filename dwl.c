@@ -235,6 +235,7 @@ typedef struct {
 	struct wlr_buffer base;
 	struct wl_listener release;
 	bool busy;
+	bool tracked;
 	Img *image;
 	uint32_t data[];
 } Buffer;
@@ -890,6 +891,8 @@ bufdestroy(struct wlr_buffer *wlr_buffer)
 	Buffer *buf = wl_container_of(wlr_buffer, buf, base);
 	if (buf->busy)
 		wl_list_remove(&buf->release.link);
+	if (buf->tracked)
+		listeners = remove_listener(&buf->release, listeners);
 	drwl_image_destroy(buf->image);
 	free(buf);
 }
@@ -938,7 +941,12 @@ bufmon(Monitor *m)
 		return NULL;
 
 	buf->busy = true;
-	LISTEN(&buf->base.events.release, &buf->release, bufrelease);
+	buf->release.notify = SYM(bufrelease);
+	if (!buf->tracked) {
+		listeners = append_listener(&buf->release, listeners);
+		buf->tracked = true;
+	}
+	wl_signal_add(&buf->base.events.release, &buf->release);
 	wlr_buffer_lock(&buf->base);
 	drwl_setimage(m->drw, buf->image);
 	return buf;
