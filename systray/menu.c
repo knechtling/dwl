@@ -319,26 +319,26 @@ static void
 createmenuitem(MenuItem *mi, dbus_int32_t id, const char *label,
                int toggle_state, int has_submenu)
 {
-	char *tok;
-	char temp[LABEL_MAX];
+	const char *prefix;
+	size_t len = 0;
 
-	if (toggle_state == 0)
-		strcpy(mi->label, "☐ ");
-	else if (toggle_state == 1)
-		strcpy(mi->label, "✓ ");
-	else
-		strcpy(mi->label, "  ");
+	prefix = toggle_state == 0 ? "☐ " : toggle_state == 1 ? "✓ " : "  ";
+	strncpy(mi->label, prefix, sizeof(mi->label));
+	mi->label[sizeof(mi->label) - 1] = '\0';
+	len = strlen(mi->label);
 
-	/* Remove "mnemonics" (underscores which mark keyboard shortcuts) */
-	strcpy(temp, label);
-	tok = strtok(temp, "_");
-	do {
-		strcat(mi->label, tok);
-	} while ((tok = strtok(NULL, "_")));
+	/* Remove "mnemonics" (underscores which mark keyboard shortcuts) safely */
+	for (const char *p = label; *p && len + 1 < sizeof(mi->label); p++) {
+		if (*p == '_')
+			continue;
+		mi->label[len++] = *p;
+	}
+	mi->label[len] = '\0';
 
 	if (has_submenu) {
+		const char *arrow = " →";
+		strncat(mi->label, arrow, sizeof(mi->label) - strlen(mi->label) - 1);
 		mi->has_submenu = 1;
-		strcat(mi->label, " →");
 	}
 
 	mi->id = id;

@@ -487,6 +487,7 @@ static int statusin(int fd, unsigned int mask, void *data);
 #undef static
 #define static
 
+static void notifyexecfailure(const char *cmd, int err);
 static void spawn(const Arg *arg);
 static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
@@ -1452,6 +1453,7 @@ createmon(struct wl_listener *listener, void *data)
 	wlr_output_state_init(&state);
 	/* Initialize monitor state using configured rules */
 	m->tagset[0] = m->tagset[1] = 1;
+	m->gaps = gaps;
 	for (r = monrules; r < END(monrules); r++) {
 		if (!r->name || strstr(wlr_output->name, r->name)) {
 			m->m.x = r->x;
@@ -2538,12 +2540,28 @@ void
 monocle(Monitor *m)
 {
 	Client *c;
-	int n = 0;
+	int n = 0, oh, ov;
+	struct wlr_box box;
 
 	wl_list_for_each(c, &clients, link) {
 		if (!VISIBLEON(c, m) || c->isfloating || c->isfullscreen)
 			continue;
-		resize(c, m->w, 0, !smartborders);
+		n++;
+	}
+	oh = ov = m->gaps && !(smartgaps && n == 1) ? gappx : 0;
+
+	box = m->w;
+	box.x += ov;
+	box.y += oh;
+	box.width -= 2 * ov;
+	box.height -= 2 * oh;
+	if (box.width <= 0 || box.height <= 0)
+		return;
+
+	wl_list_for_each(c, &clients, link) {
+		if (!VISIBLEON(c, m) || c->isfloating || c->isfullscreen)
+			continue;
+		resize(c, box, 0, !smartborders);
 		n++;
 	}
 	if (n)
@@ -3428,6 +3446,17 @@ setup(void)
 #endif
 #ifdef HOT
 
+static void
+notifyexecfailure(const char *cmd, int err)
+{
+	char body[256];
+	const char *name = cmd && *cmd ? cmd : "(null)";
+
+	snprintf(body, sizeof(body), "%s: %s", name, strerror(err));
+	execl("/bin/env", "--", "notify-send", "-u", "critical",
+			"dwl: command failed", body, NULL);
+}
+
 void
 spawn(const Arg *arg)
 {
@@ -3436,7 +3465,8 @@ spawn(const Arg *arg)
 		dup2(STDERR_FILENO, STDOUT_FILENO);
 		setsid();
 		execvp(((char **)arg->v)[0], (char **)arg->v);
-		die("dwl: execvp %s failed:", ((char **)arg->v)[0]);
+		notifyexecfailure(((char **)arg->v)[0], errno);
+		_exit(1);
 	}
 }
 
@@ -3448,7 +3478,8 @@ spawnscratch(const Arg *arg)
 		dup2(STDERR_FILENO, STDOUT_FILENO);
 		setsid();
 		execvp(((char **)arg->v)[1], ((char **)arg->v) + 1);
-		die("dwl: execvp %s failed:", ((char **)arg->v)[1]);
+		notifyexecfailure(((char **)arg->v)[1], errno);
+		_exit(1);
 	}
 }
 
@@ -3546,6 +3577,8 @@ tile(Monitor *m)
 {
 	unsigned int mw, my, ty, draw_borders = 1;
 	int i, n = 0;
+	int oh, ov, ih, iv;
+	struct wlr_box wa;
 	Client *c;
 
 	wl_list_for_each(c, &clients, link)
@@ -3554,25 +3587,44 @@ tile(Monitor *m)
 	if (n == 0)
 		return;
 
+	ih = iv = m->gaps ? gappx : 0;
+	oh = ov = m->gaps ? gappx : 0;
+	if (smartgaps && n == 1)
+		oh = ov = 0;
+
+	wa = m->w;
+	wa.x += ov;
+	wa.y += oh;
+	wa.width -= 2 * ov;
+	wa.height -= 2 * oh;
+	if (wa.width <= 0 || wa.height <= 0)
+		return;
+
 	if (n == smartborders)
 		draw_borders = 0;
 
 	if (n > m->nmaster)
-		mw = m->nmaster ? (int)roundf(m->w.width * m->mfact) : 0;
+		mw = m->nmaster ? (int)roundf((wa.width - iv) * m->mfact) : 0;
 	else
-		mw = m->w.width;
+		mw = wa.width;
 	i = my = ty = 0;
 	wl_list_for_each(c, &clients, link) {
 		if (!VISIBLEON(c, m) || c->isfloating || c->isfullscreen)
 			continue;
 		if (i < m->nmaster) {
-			resize(c, (struct wlr_box){.x = m->w.x, .y = m->w.y + my, .width = mw,
-				.height = (m->w.height - my) / (MIN(n, m->nmaster) - i)}, 0, draw_borders);
-			my += c->geom.height;
+			int h = (wa.height - my - ih * (MIN(n, m->nmaster) - i - 1))
+					/ (MIN(n, m->nmaster) - i);
+			resize(c, (struct wlr_box){.x = wa.x, .y = wa.y + my, .width = mw,
+				.height = h}, 0, draw_borders);
+			my += h + ih;
 		} else {
-			resize(c, (struct wlr_box){.x = m->w.x + mw, .y = m->w.y + ty,
-				.width = m->w.width - mw, .height = (m->w.height - ty) / (n - i)}, 0, draw_borders);
-			ty += c->geom.height;
+			int h = (wa.height - ty - ih * (n - i - 1)) / (n - i);
+			int sx = wa.x + mw + (n > m->nmaster ? iv : 0);
+			int sw = wa.width - mw - (n > m->nmaster ? iv : 0);
+
+			resize(c, (struct wlr_box){.x = sx, .y = wa.y + ty,
+				.width = sw, .height = h}, 0, draw_borders);
+			ty += h + ih;
 		}
 		i++;
 	}
@@ -3606,8 +3658,14 @@ togglefullscreen(const Arg *arg)
 void
 togglegaps(const Arg *arg)
 {
-	selmon->gaps = !selmon->gaps;
-	arrange(selmon);
+	Monitor *m;
+
+	gaps = !gaps;
+	wl_list_for_each(m, &mons, link) {
+		m->gaps = gaps;
+		arrange(m);
+	}
+	drawbars();
 }
 
 void
@@ -4142,6 +4200,7 @@ load(void)
 
     if (!path) {
         fprintf(stderr, "cannot find dwl.so\n");
+        return NULL;
     }
 
     do {
@@ -4163,41 +4222,47 @@ load(void)
 
 const char *
 get_module_path(void) {
-    char home[PATH_MAX];
-    strcpy(home, getenv("HOME"));
-    strcat(home, "/.local/lib");
-    const char* abspaths[] = {".", home, "/usr/share/lib", "/usr/local/lib", "/usr/local/share/lib"};
-    const char* relpaths[] = {"", "/../lib"};
-    char paths[LENGTH(abspaths) + LENGTH(relpaths)][PATH_MAX];
-    static char out[PATH_MAX] = "./";
+	char home[PATH_MAX];
+	const char *abspaths[] = {".", NULL, "/usr/share/lib", "/usr/local/lib", "/usr/local/share/lib"};
+	const char *relpaths[] = {"", "/../lib"};
+	char paths[LENGTH(abspaths) + LENGTH(relpaths)][PATH_MAX];
+	size_t pathcount = 0;
+	static char out[PATH_MAX] = "./";
 
-    for (size_t i = 0; i < LENGTH(abspaths); i++)
-        realpath(abspaths[i], paths[i]);
+	if (getenv("HOME") && snprintf(home, sizeof(home), "%s/.local/lib", getenv("HOME")) < (int)sizeof(home))
+		abspaths[1] = home;
 
-    for (size_t i = 0; i < LENGTH(relpaths); i++)
-    {
-        char tmp[PATH_MAX];
-        strcpy(tmp, runpath);
-        strcat(tmp, relpaths[i]);
-        realpath(tmp, paths[LENGTH(abspaths) + i]);
-    }
+	for (size_t i = 0; i < LENGTH(abspaths); i++) {
+		if (!abspaths[i] || !abspaths[i][0])
+			continue;
+		if (realpath(abspaths[i], paths[pathcount]))
+			pathcount++;
+	}
 
+	for (size_t i = 0; i < LENGTH(relpaths); i++) {
+		char tmp[PATH_MAX];
 
+		if (!runpath)
+			continue;
+		if (snprintf(tmp, sizeof(tmp), "%s%s", runpath, relpaths[i]) >= (int)sizeof(tmp))
+			continue;
+		if (realpath(tmp, paths[pathcount]))
+			pathcount++;
+	}
 
-    for (size_t i = 0; i < LENGTH(paths); i++)
-    {
-        char tmp[PATH_MAX];
-        printf("checking path: %s\n", paths[i]);
-        strcpy(tmp, paths[i]);
-        strcat(tmp, "/dwl.so");
-        if (access(tmp, F_OK|R_OK) == 0)
-        {
-            strcpy(out, tmp);
-            return out;
-        }
-    }
+	for (size_t i = 0; i < pathcount; i++) {
+		char tmp[PATH_MAX];
 
-    return NULL;
+		if (snprintf(tmp, sizeof(tmp), "%s/dwl.so", paths[i]) >= (int)sizeof(tmp))
+			continue;
+		if (access(tmp, F_OK | R_OK) == 0) {
+			strncpy(out, tmp, sizeof(out));
+			out[sizeof(out) - 1] = '\0';
+			return out;
+		}
+	}
+
+	return NULL;
 }
 
 void
