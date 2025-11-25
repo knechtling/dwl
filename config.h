@@ -189,7 +189,7 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_d, spawn, {.v = menucmd}},
     {MODKEY, XKB_KEY_Return, spawn, {.v = termcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Return, togglescratch, {.v = scratchpadcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_L, togglescratch, {.v = scratchpasscmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_P, togglescratch, {.v = scratchpasscmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
