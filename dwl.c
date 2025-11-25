@@ -487,7 +487,6 @@ static int statusin(int fd, unsigned int mask, void *data);
 #undef static
 #define static
 
-static void notifyexecfailure(const char *cmd, int err);
 static void spawn(const Arg *arg);
 static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
