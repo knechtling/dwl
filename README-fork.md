@@ -55,5 +55,5 @@ Mouse:
 
 ## Hot reload workflow
 1. Build: `make dwl.so`.
-2. Trigger your reload keybinding (mapped in config to call `reload`).
+2. Trigger your reload keybinding: `MOD+Ctrl+F5`.
 3. On success you’ll see a notification; on failure, a critical `notify-send` with the reason. Ensure `dwl.so` is readable in one of: current dir, `$HOME/.local/lib`, `/usr/local/lib`, `/usr/share/lib`, or alongside the running binary.

@@ -200,6 +200,7 @@ static const Key keys[] = {
     // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
     // {MODKEY, XKB_KEY_F2, spawn, {.v = (const char *[]){"tutorialvids", NULL}}},
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
+    {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F5, reload, {0}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_u, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_m, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_w, spawn, {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
