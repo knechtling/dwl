@@ -473,6 +473,7 @@ static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, uint32_t newtags);
 static void setpsel(struct wl_listener *listener, void *data);
 static void setsel(struct wl_listener *listener, void *data);
+void checkdeps(void);
 
 #undef static
 #define static extern
@@ -2979,6 +2980,11 @@ run(char *startup_cmd)
 	 * cursor position, and set default cursor image */
 	selmon = TSYM(Monitor *(*)(double, double), xytomon)(cursor->x, cursor->y);
 
+	/* Warn early if expected helper binaries are missing */
+	void (*deps)(void) = TSYM(void (*)(void), checkdeps);
+	if (deps)
+		deps();
+
 	/* TODO hack to get cursor to display in its initial location (100, 100)
 	 * instead of (0, 0) and then jumping. Still may not be fully
 	 * initialized, as the image/coordinates are not transformed for the
@@ -3452,6 +3458,76 @@ setup(void)
 
 #endif
 #ifdef HOT
+
+static void
+notifymissingcmd(const char *cmd)
+{
+	if (fork() == 0) {
+		execl("/bin/env", "--", "notify-send", "-u", "low",
+				"dwl: missing dependency", cmd ? cmd : "(null)", NULL);
+		_exit(1);
+	}
+	wlr_log(WLR_ERROR, "missing external command: %s", cmd ? cmd : "(null)");
+}
+
+static int
+binexists(const char *cmd)
+{
+	char pathbuf[PATH_MAX];
+	const char *pathenv, *cur;
+	size_t cmdlen;
+
+	if (!cmd || !*cmd)
+		return 0;
+	if (strchr(cmd, '/'))
+		return access(cmd, X_OK) == 0;
+
+	pathenv = getenv("PATH");
+	if (!pathenv)
+		return 0;
+	cmdlen = strlen(cmd);
+
+	for (cur = pathenv; *cur;) {
+		const char *next = strchr(cur, ':');
+		size_t len = next ? (size_t)(next - cur) : strlen(cur);
+
+		if (len && len + 1 + cmdlen < sizeof(pathbuf)) {
+			memcpy(pathbuf, cur, len);
+			pathbuf[len] = '/';
+			memcpy(pathbuf + len + 1, cmd, cmdlen + 1);
+			if (access(pathbuf, X_OK) == 0)
+				return 1;
+		}
+		if (!next)
+			break;
+		cur = next + 1;
+	}
+	return 0;
+}
+
+void
+checkdeps(void)
+{
+	/* Commands used by keybindings/menus; notify if missing so users know what failed */
+	const char *deps[] = {
+		"wmenu-run", "wmenu", "wlr-which-key", "cliphist", "wl-copy",
+		"sysact", "displayselect", "pulsemixer", "dmenuunicode",
+		"pkg-install", "pkg-remove", "j4-dmenu-desktop", "lfub", "ytfzf",
+		"wpctl", "nvim", "gtk-launch", "whatsapp-web",
+		"/home/anton/.local/bin/dwl-startup.sh",
+		"/home/anton/.local/bin/dmenuhandler",
+		"/home/anton/.local/bin/dmenumountcifs",
+		"/home/anton/.local/bin/dmenurecord",
+		"/home/anton/.local/bin/weblaunch",
+		"/home/anton/.local/bin/maimpick-wl",
+		"/home/anton/.local/bin/screenshot.sh",
+	};
+
+	for (size_t i = 0; i < LENGTH(deps); i++) {
+		if (!binexists(deps[i]))
+			notifymissingcmd(deps[i]);
+	}
+}
 
 static void
 notifyexecfailure(const char *cmd, int err)

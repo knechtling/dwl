@@ -8,7 +8,7 @@ This fork keeps dwl light but adds a few power-user affordances: hot-reloadable 
 - **Bar + systray + menus:** Built-in status bar with tray icons, right-click menus, window/layout menus, and clickable tray items.
 - **Gaps/smart borders:** Tiled layouts respect configurable gaps, with smart gaps when a single client is present.
 - **Quality-of-life:** Sticky clients, scratchpads, attachtop, smart border drawing, cursor auto-hide, uncluttered focus behavior, and winview (jump to focused client’s tags).
-- **Safety:** Launcher failures use `notify-send` so missing tools don’t silently fail; hot reload failures also notify.
+- **Safety:** Launcher failures use `notify-send` so missing tools don’t silently fail; startup also warns if common helper binaries are missing; hot reload failures also notify.
 
 ## Patches/features included
 
