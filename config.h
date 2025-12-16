@@ -5,24 +5,29 @@
 #define EMAILCLIENT "thunderbird"
 
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
-#define COLOR(hex) {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f, (hex & 0xFF) / 255.0f}
+#define COLOR(hex)                                                             \
+  {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f,               \
+   ((hex >> 8) & 0xFF) / 255.0f, (hex & 0xFF) / 255.0f}
 /* appearance */
-static const int sloppyfocus = 1;               /* focus follows mouse */
-static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will disable idle tracking even if it's
-                                                   surface isn't visible  */
-static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
-static int gaps = 1;                            /* 1 means gaps between windows are added */
-static const unsigned int gappx = 10;           /* gap pixel between windows */
-static const unsigned int borderpx = 2;         /* border pixel of windows */
-static const unsigned int systrayspacing = 2;   /* systray spacing */
-static const int showsystray = 1;               /* 0 means no systray */
-static const int showbar = 1;                   /* 0 means no bar */
-static const int topbar = 1;                    /* 0 means bottom bar */
+static const int sloppyfocus = 1; /* focus follows mouse */
+static const int bypass_surface_visibility =
+    0; /* 1 means idle inhibitors will disable idle
+          tracking even if it's surface isn't visible  */
+static const int smartgaps =
+    0;               /* 1 means no outer gap when there is only one window */
+static int gaps = 1; /* 1 means gaps between windows are added */
+static const unsigned int gappx = 10;         /* gap pixel between windows */
+static const unsigned int borderpx = 2;       /* border pixel of windows */
+static const unsigned int systrayspacing = 2; /* systray spacing */
+static const int showsystray = 1;             /* 0 means no systray */
+static const int showbar = 1;                 /* 0 means no bar */
+static const int topbar = 1;                  /* 0 means bottom bar */
 static const char *fonts[] = {"monospace:size=10"};
 static const float rootcolor[] = COLOR(0x000000ff);
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old
  * behavior */
-static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* You can also use glsl colors */
+static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f,
+                                      1.0f}; /* You can also use glsl colors */
 static uint32_t colors[][3] = {
     /*               fg          bg          border    */
     [SchemeNorm] = {0xbbbbbbff, 0x222222ff, 0x444444ff},
@@ -51,10 +56,13 @@ static const Menu menus[] = {
 /* NOTE: ALWAYS keep a rule declared even if you don't use rules (e.g leave at
  * least one example) */
 static const Rule rules[] = {
-    /* app_id             title         tags mask     isfloating   monitor scratchkey */
-    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
+    /* app_id             title         tags mask     isfloating   monitor
+       scratchkey */
+    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags
+                                            floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'},
+    {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -113,14 +121,16 @@ LIBINPUT_CONFIG_SCROLL_2FG
 LIBINPUT_CONFIG_SCROLL_EDGE
 LIBINPUT_CONFIG_SCROLL_ON_BUTTON_DOWN
 */
-static const enum libinput_config_scroll_method scroll_method = LIBINPUT_CONFIG_SCROLL_2FG;
+static const enum libinput_config_scroll_method scroll_method =
+    LIBINPUT_CONFIG_SCROLL_2FG;
 
 /* You can choose between:
 LIBINPUT_CONFIG_CLICK_METHOD_NONE
 LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS
 LIBINPUT_CONFIG_CLICK_METHOD_CLICKFINGER
 */
-static const enum libinput_config_click_method click_method = LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS;
+static const enum libinput_config_click_method click_method =
+    LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS;
 
 /* You can choose between:
 LIBINPUT_CONFIG_SEND_EVENTS_ENABLED
@@ -133,28 +143,33 @@ static const uint32_t send_events_mode = LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 LIBINPUT_CONFIG_ACCEL_PROFILE_FLAT
 LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE
 */
-static const enum libinput_config_accel_profile accel_profile = LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE;
+static const enum libinput_config_accel_profile accel_profile =
+    LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE;
 static const double accel_speed = 0.0;
 
 /* You can choose between:
 LIBINPUT_CONFIG_TAP_MAP_LRM -- 1/2/3 finger tap maps to left/right/middle
 LIBINPUT_CONFIG_TAP_MAP_LMR -- 1/2/3 finger tap maps to left/middle/right
 */
-static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TAP_MAP_LRM;
+static const enum libinput_config_tap_button_map button_map =
+    LIBINPUT_CONFIG_TAP_MAP_LRM;
 
 /* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
 #define MODKEY WLR_MODIFIER_LOGO
 
-#define TAGKEYS(KEY, SKEY, TAG)                                                                                                                      \
-  {MODKEY, KEY, view, {.ui = 1 << TAG}}, {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},                                            \
-      {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {                                                                                  \
-    MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, { .ui = 1 << TAG }                                                             \
+#define TAGKEYS(KEY, SKEY, TAG)                                                \
+  {MODKEY, KEY, view, {.ui = 1 << TAG}},                                       \
+      {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},         \
+      {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {            \
+    MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, {        \
+      .ui = 1 << TAG                                                           \
+    }                                                                          \
   }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd)                                                                                                                                   \
-  {                                                                                                                                                  \
-    .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                                                                                             \
+#define SHCMD(cmd)                                                             \
+  {                                                                            \
+    .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                       \
   }
 
 /* commands */
@@ -165,10 +180,14 @@ static const char *dmenucmd[] = {"wmenu", NULL};
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = {"s", TERMINAL, "-T", "scratchpad", NULL};
 static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
-static const char *scratchnetcmd[] = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
-static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh", NULL};
-static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", NULL};
-static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL};
+static const char *scratchnetcmd[] = {"n",  TERMINAL, "-T", "scratchnet",
+                                      "-e", "nmtui",  NULL};
+static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh",
+                                      NULL};
+static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh",
+                                         "-s", NULL};
+static const char *screenshotselcopycmd[] = {
+    "/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -176,65 +195,181 @@ static const Key keys[] = {
     // system
     {MODKEY, XKB_KEY_d, spawn, {.v = menucmd}},
     {MODKEY, XKB_KEY_Return, spawn, {.v = termcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Return, togglescratch, {.v = scratchpadcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_P, togglescratch, {.v = scratchpasscmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_Return,
+     togglescratch,
+     {.v = scratchpadcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_P,
+     togglescratch,
+     {.v = scratchpasscmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_W,
+     togglescratch,
+     {.v = scratchnetcmd}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
-    {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
+    {MODKEY, XKB_KEY_c, spawn,
+     SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_s, spawn, SHCMD("$HOME/.local/bin/dwl-startup.sh")},
-    // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
-    // {MODKEY, XKB_KEY_F2, spawn, {.v = (const char *[]){"tutorialvids", NULL}}},
-    {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_u, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_m, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_w, spawn, {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_p, spawn, {.v = (const char *[]){"/home/anton/.local/bin/maimpick-wl", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_r, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
+    // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura
+    // /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")}, {MODKEY,
+    // XKB_KEY_F2, spawn,
+    // {.v = (const char *[]){"tutorialvids", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_u,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_m,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_w,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_p,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/maimpick-wl", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_r,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
+    {MODKEY, XKB_KEY_F1, spawn, SHCMD("wlr-which-key")},
+    {MODKEY,
+     XKB_KEY_F2,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
+    {MODKEY,
+     XKB_KEY_F3,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
-    // {MODKEY, XKB_KEY_F6, spawn, {.v = (const char *[]){"torwrap", NULL}}},
+    {MODKEY, XKB_KEY_F5, spawn, SHCMD("gtk-launch whatsapp-web")},
+    {MODKEY, XKB_KEY_F6, togglescratch, {.v = scratchpasscmd}},
     {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode"}}},
-    // NULL}}}, {MODKEY, XKB_KEY_F8, spawn, {.v = (const char *[]){"maimpick",
-    // NULL}}}, {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = (const
-    // char *[]){"ss-uni", NULL}}}, {MODKEY, XKB_KEY_F9, spawn, {.v = (const
-    // char *[]){"mounter", NULL}}}, {MODKEY, XKB_KEY_F10, spawn, {.v = (const
-    // char *[]){"unmounter", NULL}}},
-    // {MODKEY, XKB_KEY_F11, spawn,
-    // SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings "
-    // "--profile=low-latency --input-conf=/dev/null --title=webcam $(ls "
-    // "/dev/video[0,2,4,6,8] | tail -n 1)")},
-    {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
-    {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
-    {MODKEY, XKB_KEY_plus, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%+")},
+    {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
+    {MODKEY | WLR_MODIFIER_CTRL,
+     XKB_KEY_F8,
+     spawn,
+     {.v = screenshotselcopycmd}},
+    {MODKEY,
+     XKB_KEY_F9,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--input-volume=mute-toggle",
+                            NULL}}},
+    {MODKEY, XKB_KEY_F10, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
+    {MODKEY,
+     XKB_KEY_F11,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=play-pause"}}},
+    {MODKEY,
+     XKB_KEY_F12,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--input-volume=mute-toggle",
+                            NULL}}},
+    {MODKEY,
+     XKB_KEY_i,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_minus,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=-5", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_underscore,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=-15", NULL}}},
+    {MODKEY,
+     XKB_KEY_plus,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=+5", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_asterisk,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=+15", NULL}}},
     {MODKEY, XKB_KEY_w, spawn, {.v = (const char *[]){BROWSER, NULL}}},
     {MODKEY, XKB_KEY_z, spawn, {.v = (const char *[]){MUSICPLAYER, NULL}}},
     {MODKEY, XKB_KEY_e, spawn, {.v = (const char *[]){EMAILCLIENT, NULL}}},
-    {MODKEY, XKB_KEY_r, spawn, {.v = (const char *[]){TERMINAL, "-e", "lfub", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_H, spawn, {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Y, spawn, {.v = (const char *[]){TERMINAL, "-e", "ytfzf", "-t", NULL}}},
-    {MODKEY, XKB_KEY_n, spawn, {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
-    {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
-    {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F8, spawn, {.v = screenshotselcopycmd}},
+    {MODKEY,
+     XKB_KEY_r,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "lfub", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_H,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_Y,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "ytfzf", "-t", NULL}}},
+    {MODKEY,
+     XKB_KEY_n,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_M,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=mute-toggle",
+                            NULL}}},
+    // Second layer fn keys (Logitech Mx Mechanical sends weird super combos so
+    // we bind them here)
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_period,
+     spawn,
+     {.v = screenshotselcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_S, spawn, {.v = screenshotselcmd}},
     // XF86 Media Keys
-    {0, XKB_KEY_XF86AudioMute, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
-    {0, XKB_KEY_XF86AudioMicMute, spawn, SHCMD("pactl set-source-mute @DEFAULT_SOURCE@ toggle")},
-    {0, XKB_KEY_XF86AudioRaiseVolume, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 3%+")},
-    {0, XKB_KEY_XF86AudioLowerVolume, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 3%-")},
-    {0, XKB_KEY_XF86AudioPrev, spawn, {.v = (const char *[]){"mpc", "prev", NULL}}},
-    {0, XKB_KEY_XF86AudioNext, spawn, {.v = (const char *[]){"mpc", "next", NULL}}},
-    {0, XKB_KEY_XF86AudioPause, spawn, {.v = (const char *[]){"mpc", "pause", NULL}}},
-    {0, XKB_KEY_XF86AudioPlay, spawn, {.v = (const char *[]){"mpc", "play", NULL}}},
-    {0, XKB_KEY_XF86AudioStop, spawn, {.v = (const char *[]){"mpc", "stop", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessUp, spawn, {.v = (const char *[]){"brightnessctl", "set", "+15%", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessDown, spawn, {.v = (const char *[]){"brightnessctl", "set", "15%-", NULL}}},
+    {0,
+     XKB_KEY_XF86AudioMute,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume=mute-toggle",
+                            NULL}}},
+    {0,
+     XKB_KEY_XF86AudioMicMute,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--input-volume=mute-toggle",
+                            NULL}}},
+    {0,
+     XKB_KEY_XF86AudioRaiseVolume,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume", "raise",
+                            NULL}}},
+    {0,
+     XKB_KEY_XF86AudioLowerVolume,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume", "lower",
+                            NULL}}},
+    {0,
+     XKB_KEY_XF86AudioPrev,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=prev", NULL}}},
+
+    {0,
+     XKB_KEY_XF86AudioNext,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=prev", NULL}}},
+    {0,
+     XKB_KEY_XF86AudioPause,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=pause", NULL}}},
+    {0,
+     XKB_KEY_XF86AudioPlay,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=play", NULL}}},
+    {0,
+     XKB_KEY_XF86AudioStop,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl=stop", NULL}}},
+    {0,
+     XKB_KEY_XF86MonBrightnessUp,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "brightness", "raise", NULL}}},
+    {0,
+     XKB_KEY_XF86MonBrightnessDown, spawn, {.v = (const char *[]){"swayosd-client", "brightness", "lower", NULL}}},
     // Windows
     {MODKEY, XKB_KEY_j, focusstack, {.i = +1}},
     {MODKEY, XKB_KEY_k, focusstack, {.i = -1}},
@@ -252,8 +387,6 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_t, setlayout, {.v = &layouts[0]}},
     {MODKEY, XKB_KEY_f, setlayout, {.v = &layouts[1]}},
     {MODKEY, XKB_KEY_m, setlayout, {.v = &layouts[2]}},
-    // {MODKEY, XKB_KEY_space, setlayout, {0}},
-    //
     // menus
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_o, menu, {.v = &menus[1]}},
@@ -266,8 +399,14 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_period, focusmon, {.i = WLR_DIRECTION_RIGHT}},
     {MODKEY, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_less,
+     tagmon,
+     {.i = WLR_DIRECTION_LEFT}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_greater,
+     tagmon,
+     {.i = WLR_DIRECTION_RIGHT}},
     TAGKEYS(XKB_KEY_1, XKB_KEY_exclam, 0),
     TAGKEYS(XKB_KEY_2, XKB_KEY_quotedbl, 1),
     TAGKEYS(XKB_KEY_3, XKB_KEY_section, 2),
@@ -284,9 +423,11 @@ static const Key keys[] = {
 /* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
  * do not remove them.
  */
-#define CHVT(n)                                                                                                                                      \
-  {                                                                                                                                                  \
-    WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, { .ui = (n) }                                                             \
+#define CHVT(n)                                                                \
+  {                                                                            \
+    WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, {   \
+      .ui = (n)                                                                \
+    }                                                                          \
   }
     CHVT(1),
     CHVT(2),
