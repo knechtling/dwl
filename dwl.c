@@ -2152,7 +2152,6 @@ mapnotify(struct wl_listener *listener, void *data)
 		die("oom");
 	}
 	drawbars();
-	printstatus();
 
 unset_fullscreen:
 	m = c->mon ? c->mon : xytomon(c->geom.x, c->geom.y);
