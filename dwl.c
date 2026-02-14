@@ -154,7 +154,7 @@ typedef struct {
 	uint32_t tags;
 	int isfloating, isurgent, isfullscreen, issticky;
 	uint32_t resize; /* configure serial of a pending resize */
-	struct wl_list link_temp; /* for scratchpad */
+	char scratchkey;
 } Client;
 
 typedef struct {
@@ -228,6 +228,7 @@ struct Monitor {
 	struct wlr_box w; /* window area, layout-relative */
 	struct wl_list layers[4]; /* LayerSurface.link */
 	const Layout *lt[2];
+	int gaps;
 	unsigned int seltags;
 	unsigned int sellt;
 	uint32_t tagset[2];
@@ -268,6 +269,7 @@ typedef struct {
 	uint32_t tags;
 	int isfloating;
 	int monitor;
+	const char scratchkey;
 } Rule;
 
 typedef struct {
@@ -286,7 +288,6 @@ typedef struct {
 } Menu;
 
 /* function declarations */
-static void addscratchpad(const Arg *arg);
 static void applybounds(Client *c, struct wlr_box *bbox);
 static void applyrules(Client *c);
 static void arrange(Monitor *m);
@@ -378,7 +379,6 @@ static void pointerfocus(Client *c, struct wlr_surface *surface,
 static void powermgrsetmode(struct wl_listener *listener, void *data);
 static void quit(const Arg *arg);
 static void rendermon(struct wl_listener *listener, void *data);
-static void removescratchpad(const Arg *arg);
 static void requestdecorationmode(struct wl_listener *listener, void *data);
 static void requeststartdrag(struct wl_listener *listener, void *data);
 static void requestmonstate(struct wl_listener *listener, void *data);
@@ -397,6 +397,7 @@ static void setpsel(struct wl_listener *listener, void *data);
 static void setsel(struct wl_listener *listener, void *data);
 static void setup(void);
 static void spawn(const Arg *arg);
+static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
 static int statusin(int fd, unsigned int mask, void *data);
 static void tag(const Arg *arg);
@@ -404,7 +405,8 @@ static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
-static void togglescratchpad(const Arg *arg);
+static void togglegaps(const Arg *arg);
+static void togglescratch(const Arg *arg);
 static void togglesticky(const Arg *arg);
 static void togglefullscreen(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -504,9 +506,6 @@ static const struct wlr_buffer_impl buffer_impl = {
     .end_data_ptr_access = bufdataend,
 };
 
-static struct wl_list scratchpad_clients;
-static int scratchpad_visible = 1;
-
 #ifdef XWAYLAND
 static void activatex11(struct wl_listener *listener, void *data);
 static void associatex11(struct wl_listener *listener, void *data);
@@ -525,8 +524,6 @@ static xcb_atom_t netatom[NetLast];
 
 /* attempt to encapsulate suck into one file */
 #include "client.h"
-
-#include "simple_scratchpad.c"
 
 /* function implementations */
 void
@@ -557,6 +554,7 @@ applyrules(Client *c)
 	Monitor *mon = selmon, *m;
 
 	c->isfloating = client_is_float_type(c);
+	c->scratchkey = 0;
 	if (!(appid = client_get_appid(c)))
 		appid = broken;
 	if (!(title = client_get_title(c)))
@@ -566,6 +564,7 @@ applyrules(Client *c)
 		if ((!r->title || strstr(title, r->title))
 				&& (!r->id || strstr(appid, r->id))) {
 			c->isfloating = r->isfloating;
+			c->scratchkey = r->scratchkey;
 			newtags |= r->tags;
 			i = 0;
 			wl_list_for_each(m, &mons, link) {
@@ -1213,6 +1212,7 @@ createmon(struct wl_listener *listener, void *data)
 
 	wlr_output_state_init(&state);
 	/* Initialize monitor state using configured rules */
+	m->gaps = gaps;
 	m->tagset[0] = m->tagset[1] = 1;
 	for (r = monrules; r < END(monrules); r++) {
 		if (!r->name || strstr(wlr_output->name, r->name)) {
@@ -1494,16 +1494,7 @@ void
 destroynotify(struct wl_listener *listener, void *data)
 {
 	/* Called when the xdg_toplevel is destroyed. */
-	Client *sc, *c = wl_container_of(listener, c, destroy);
-	/* Check if destroyed client was part of scratchpad_clients and clean it from the list if so */
-	if (c && wl_list_length(&scratchpad_clients) > 0) {
-		wl_list_for_each(sc, &scratchpad_clients, link_temp) {
-			if (sc == c) {
-				wl_list_remove(&c->link_temp);
-				break;
-			}
-		}
-	}
+	Client *c = wl_container_of(listener, c, destroy);
 	wl_list_remove(&c->destroy.link);
 	wl_list_remove(&c->set_title.link);
 	wl_list_remove(&c->fullscreen.link);
@@ -2820,16 +2811,7 @@ setcursorshape(struct wl_listener *listener, void *data)
 void
 setfloating(Client *c, int floating)
 {
-	Client *sc, *p = client_get_parent(c);
-	/* Check if unfloated client was part of scratchpad_clients and remove it from scratchpad_clients list if so */
-	if (!floating && wl_list_length(&scratchpad_clients) > 0) {
-		wl_list_for_each(sc, &scratchpad_clients, link_temp) {
-			if (sc == c) {
-				wl_list_remove(&c->link_temp);
-				break;
-			}
-		}
-	}
+	Client *p = client_get_parent(c);
 	c->isfloating = floating;
 	/* If in floating layout do not change the client's layer */
 	if (!c->mon || !client_surface(c)->mapped || !c->mon->lt[c->mon->sellt]->arrange)
@@ -3077,7 +3059,6 @@ setup(void)
 	 */
 	wl_list_init(&clients);
 	wl_list_init(&fstack);
-	wl_list_init(&scratchpad_clients);
 
 	xdg_shell = wlr_xdg_shell_create(dpy, 6);
 	LISTEN_STATIC(&xdg_shell->events.new_toplevel, createnotify);
@@ -3210,6 +3191,17 @@ spawn(const Arg *arg)
 }
 
 void
+spawnscratch(const Arg *arg)
+{
+	if (fork() == 0) {
+		dup2(STDERR_FILENO, STDOUT_FILENO);
+		setsid();
+		execvp(((char **)arg->v)[1], ((char **)arg->v)+1);
+		die("dwl: execvp %s failed:", ((char **)arg->v)[1]);
+	}
+}
+
+void
 startdrag(struct wl_listener *listener, void *data)
 {
 	struct wlr_drag *drag = data;
@@ -3274,7 +3266,7 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-	unsigned int mw, my, ty, draw_borders = 1;
+	unsigned int h, r, e = m->gaps, mw, my, ty, draw_borders = 1;
 	int i, n = 0;
 	Client *c;
 
@@ -3283,26 +3275,33 @@ tile(Monitor *m)
 			n++;
 	if (n == 0)
 		return;
+	if (smartgaps == n)
+		e = 0;
 
 	if (n == smartborders)
 		draw_borders = 0;
 
 	if (n > m->nmaster)
-		mw = m->nmaster ? (int)roundf(m->w.width * m->mfact) : 0;
+		mw = m->nmaster ? (int)roundf((m->w.width + gappx*e) * m->mfact) : 0;
 	else
 		mw = m->w.width;
-	i = my = ty = 0;
+	i = 0;
+	my = ty = gappx*e;
 	wl_list_for_each(c, &clients, link) {
 		if (!VISIBLEON(c, m) || c->isfloating || c->isfullscreen)
 			continue;
 		if (i < m->nmaster) {
-			resize(c, (struct wlr_box){.x = m->w.x, .y = m->w.y + my, .width = mw,
-				.height = (m->w.height - my) / (MIN(n, m->nmaster) - i)}, 0, draw_borders);
-			my += c->geom.height;
+			r = MIN(n, m->nmaster) - i;
+			h = (m->w.height - my - gappx*e - gappx*e * (r - 1)) / r;
+			resize(c, (struct wlr_box){.x = m->w.x + gappx*e, .y = m->w.y + my,
+				.width = mw - 2*gappx*e, .height = h}, 0, draw_borders);
+			my += c->geom.height + gappx*e;
 		} else {
+			r = n - i;
+			h = (m->w.height - ty - gappx*e - gappx*e * (r - 1)) / r;
 			resize(c, (struct wlr_box){.x = m->w.x + mw, .y = m->w.y + ty,
-				.width = m->w.width - mw, .height = (m->w.height - ty) / (n - i)}, 0, draw_borders);
-			ty += c->geom.height;
+				.width = m->w.width - mw - gappx*e, .height = h}, 0, draw_borders);
+			ty += c->geom.height + gappx*e;
 		}
 		i++;
 	}
@@ -3341,6 +3340,36 @@ togglesticky(const Arg *arg)
 		return;
 
 	setsticky(c, !c->issticky);
+}
+
+void
+togglegaps(const Arg *arg)
+{
+	selmon->gaps = !selmon->gaps;
+	arrange(selmon);
+}
+
+void
+togglescratch(const Arg *arg)
+{
+	Client *c;
+	unsigned int found = 0;
+
+	/* search for first window that matches the scratchkey */
+	wl_list_for_each(c, &clients, link)
+		if (c->scratchkey == ((char**)arg->v)[0][0]) {
+			found = 1;
+			break;
+		}
+
+	if (found) {
+		c->tags = VISIBLEON(c, selmon) ? 0 : selmon->tagset[selmon->seltags];
+
+		focusclient(c->tags == 0 ? focustop(selmon) : c, 1);
+		arrange(selmon);
+	} else {
+		spawnscratch(arg);
+	}
 }
 
 void
