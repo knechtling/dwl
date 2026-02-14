@@ -149,6 +149,7 @@ typedef struct {
 	uint32_t tags;
 	int isfloating, isurgent, isfullscreen, issticky;
 	uint32_t resize; /* configure serial of a pending resize */
+	struct wl_list link_temp; /* for scratchpad */
 } Client;
 
 typedef struct {
@@ -280,6 +281,7 @@ typedef struct {
 } Menu;
 
 /* function declarations */
+static void addscratchpad(const Arg *arg);
 static void applybounds(Client *c, struct wlr_box *bbox);
 static void applyrules(Client *c);
 static void arrange(Monitor *m);
@@ -371,6 +373,7 @@ static void pointerfocus(Client *c, struct wlr_surface *surface,
 static void powermgrsetmode(struct wl_listener *listener, void *data);
 static void quit(const Arg *arg);
 static void rendermon(struct wl_listener *listener, void *data);
+static void removescratchpad(const Arg *arg);
 static void requestdecorationmode(struct wl_listener *listener, void *data);
 static void requeststartdrag(struct wl_listener *listener, void *data);
 static void requestmonstate(struct wl_listener *listener, void *data);
@@ -396,6 +399,7 @@ static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
+static void togglescratchpad(const Arg *arg);
 static void togglesticky(const Arg *arg);
 static void togglefullscreen(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -495,6 +499,9 @@ static const struct wlr_buffer_impl buffer_impl = {
     .end_data_ptr_access = bufdataend,
 };
 
+static struct wl_list scratchpad_clients;
+static int scratchpad_visible = 1;
+
 #ifdef XWAYLAND
 static void activatex11(struct wl_listener *listener, void *data);
 static void associatex11(struct wl_listener *listener, void *data);
@@ -513,6 +520,8 @@ static xcb_atom_t netatom[NetLast];
 
 /* attempt to encapsulate suck into one file */
 #include "client.h"
+
+#include "simple_scratchpad.c"
 
 /* function implementations */
 void
@@ -1480,7 +1489,16 @@ void
 destroynotify(struct wl_listener *listener, void *data)
 {
 	/* Called when the xdg_toplevel is destroyed. */
-	Client *c = wl_container_of(listener, c, destroy);
+	Client *sc, *c = wl_container_of(listener, c, destroy);
+	/* Check if destroyed client was part of scratchpad_clients and clean it from the list if so */
+	if (c && wl_list_length(&scratchpad_clients) > 0) {
+		wl_list_for_each(sc, &scratchpad_clients, link_temp) {
+			if (sc == c) {
+				wl_list_remove(&c->link_temp);
+				break;
+			}
+		}
+	}
 	wl_list_remove(&c->destroy.link);
 	wl_list_remove(&c->set_title.link);
 	wl_list_remove(&c->fullscreen.link);
@@ -2798,7 +2816,16 @@ setcursorshape(struct wl_listener *listener, void *data)
 void
 setfloating(Client *c, int floating)
 {
-	Client *p = client_get_parent(c);
+	Client *sc, *p = client_get_parent(c);
+	/* Check if unfloated client was part of scratchpad_clients and remove it from scratchpad_clients list if so */
+	if (!floating && wl_list_length(&scratchpad_clients) > 0) {
+		wl_list_for_each(sc, &scratchpad_clients, link_temp) {
+			if (sc == c) {
+				wl_list_remove(&c->link_temp);
+				break;
+			}
+		}
+	}
 	c->isfloating = floating;
 	/* If in floating layout do not change the client's layer */
 	if (!c->mon || !client_surface(c)->mapped || !c->mon->lt[c->mon->sellt]->arrange)
@@ -3046,6 +3073,7 @@ setup(void)
 	 */
 	wl_list_init(&clients);
 	wl_list_init(&fstack);
+	wl_list_init(&scratchpad_clients);
 
 	xdg_shell = wlr_xdg_shell_create(dpy, 6);
 	LISTEN_STATIC(&xdg_shell->events.new_toplevel, createnotify);
