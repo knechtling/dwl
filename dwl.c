@@ -2,9 +2,7 @@
  * See LICENSE file for copyright and license details.
  */
 
-/* stuff for hot-reload */
 #define _GNU_SOURCE
-#include <dlfcn.h>
 #include <limits.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -96,32 +94,16 @@
 #define END(A)                  ((A) + LENGTH(A))
 #define TAGMASK                 ((1u << TAGCOUNT) - 1)
 #define TEXTW(mon, text)        (drwl_font_getwidth((mon)->drw, (text)) + (mon)->lrpad)
-#define SYM(a) dlsym(dwl_module, #a)
-#define TSYM(T, a) ((T)SYM(a))
-#define CSYM(T, a) *(TSYM(T*, a))
 
 #define LISTEN(E, L, H)         do { \
-                                    (L)->notify = SYM(H); \
-                                    listeners = append_listener((L), listeners); \
+                                    (L)->notify = (H); \
                                     wl_signal_add((E), (L)); \
                                 } while(0)
 
-#define LISTEN_GLOBAL(E, L)     do { \
-                                    struct wl_listener* l = SYM(L); \
-                                    listeners = append_listener(l, listeners); \
-                                    wl_signal_add((E), l); \
-                                } while (0)
-
 #define LISTEN_STATIC(E, H)     do { \
                                     struct wl_listener* _l = ecalloc(1, sizeof(struct wl_listener)); \
-                                    _l->notify = SYM(H); \
-                                    listeners = append_listener(_l, listeners); \
+                                    _l->notify = (H); \
                                     wl_signal_add((E), _l); \
-                                } while (0)
-
-#define UNLISTEN(L)             do { \
-                                    wl_list_remove(&(L)->link); \
-                                    listeners = remove_listener((L), listeners);\
                                 } while (0)
 
 /* enums */
