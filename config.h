@@ -5,18 +5,18 @@
 #define EMAILCLIENT "thunderbird"
 
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
-#define COLOR(hex)                                                             \
-  {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f,               \
+#define COLOR(hex)                                               \
+  {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f, \
    ((hex >> 8) & 0xFF) / 255.0f, (hex & 0xFF) / 255.0f}
 /* appearance */
 static const int sloppyfocus = 1;               /* focus follows mouse */
 static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will disable idle tracking even if it's
                                                    surface isn't visible  */
-static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
+static const int smartgaps = 1;                 /* 1 means no outer gap when there is only one window */
 static int gaps = 1;                            /* 1 means gaps between windows are added */
-static const unsigned int gappx = 10;           /* gap pixel between windows */
+static const unsigned int gappx = 15;           /* gap pixel between windows */
 static const unsigned int borderpx = 3;         /* border pixel of windows */
-static const int smartborders              = 1;  /* draw borders only when needed */
+static const int smartborders = 1;              /* draw borders only when needed */
 static const unsigned int systrayspacing = 2;   /* systray spacing */
 static const int showsystray = 1;               /* 0 means no systray */
 static const int showbar = 1;                   /* 0 means no bar */
@@ -158,27 +158,27 @@ static const int cursor_timeout = 5;
 /* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
 #define MODKEY WLR_MODIFIER_LOGO
 
-#define TAGKEYS(KEY, SKEY, TAG)                                                \
-  {MODKEY, KEY, view, {.ui = 1 << TAG}},                                       \
-      {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},         \
-      {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {            \
-    MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, {        \
-      .ui = 1 << TAG                                                           \
-    }                                                                          \
+#define TAGKEYS(KEY, SKEY, TAG)                                         \
+  {MODKEY, KEY, view, {.ui = 1 << TAG}},                                \
+      {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},  \
+      {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {     \
+    MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, { \
+      .ui = 1 << TAG                                                    \
+    }                                                                   \
   }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd)                                                             \
-  {                                                                            \
-    .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                       \
+#define SHCMD(cmd)                                       \
+  {                                                      \
+    .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL } \
   }
 
 #define ADDPASSRULE(S, K) {.appid = S, .len = LENGTH(S), .key = K}
 static const PassKeypressRule pass_rules[] = {
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
-	ADDPASSRULE("WebCord", XKB_KEY_n),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
+    ADDPASSRULE("WebCord", XKB_KEY_n),
 };
 
 /* commands */
@@ -189,8 +189,8 @@ static const char *dmenucmd[] = {"wmenu", NULL};
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[] = {"s", TERMINAL, "-T", "scratchpad", NULL};
 static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
-static const char *scratchnetcmd[] = {"n",  TERMINAL, "-T", "scratchnet",
-                                      "-e", "nmtui",  NULL};
+static const char *scratchnetcmd[] = {"n", TERMINAL, "-T", "scratchnet",
+                                      "-e", "nmtui", NULL};
 static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh",
                                       NULL};
 static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh",
@@ -285,7 +285,7 @@ static const Key keys[] = {
     {MODKEY,
      XKB_KEY_F12,
      spawn,
-     {.v = (const char *[]){"swayosd-client", "--input-volume=mute-toggle",
+     {.v = (const char *[]){"swayosd-client", "--output-volume=mute-toggle",
                             NULL}}},
     {MODKEY,
      XKB_KEY_i,
@@ -385,7 +385,9 @@ static const Key keys[] = {
      spawn,
      {.v = (const char *[]){"swayosd-client", "brightness", "raise", NULL}}},
     {0,
-     XKB_KEY_XF86MonBrightnessDown, spawn, {.v = (const char *[]){"swayosd-client", "brightness", "lower", NULL}}},
+     XKB_KEY_XF86MonBrightnessDown,
+     spawn,
+     {.v = (const char *[]){"swayosd-client", "brightness", "lower", NULL}}},
     // Windows
     {MODKEY, XKB_KEY_j, focusstack, {.i = +1}},
     {MODKEY, XKB_KEY_k, focusstack, {.i = -1}},
@@ -438,11 +440,11 @@ static const Key keys[] = {
 /* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
  * do not remove them.
  */
-#define CHVT(n)                                                                \
-  {                                                                            \
-    WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, {   \
-      .ui = (n)                                                                \
-    }                                                                          \
+#define CHVT(n)                                                              \
+  {                                                                          \
+    WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, { \
+      .ui = (n)                                                              \
+    }                                                                        \
   }
     CHVT(1),
     CHVT(2),
