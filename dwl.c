@@ -69,8 +69,13 @@
 #include <xcb/xcb_icccm.h>
 #endif
 
+#include <dbus/dbus.h>
+
+#include "dbus.h"
 #include "util.h"
 #include "drwl.h"
+#include "systray/tray.h"
+#include "systray/watcher.h"
 
 /* macros */
 #define MAX(A, B)               ((A) > (B) ? (A) : (B))
