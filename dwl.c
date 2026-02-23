@@ -3064,7 +3064,7 @@ setup(void)
 	LISTEN_STATIC(&xdg_shell->events.new_toplevel, createnotify);
 	LISTEN_STATIC(&xdg_shell->events.new_popup, createpopup);
 
-	layer_shell = wlr_layer_shell_v1_create(dpy, 3);
+	layer_shell = wlr_layer_shell_v1_create(dpy, 4);
 	LISTEN_STATIC(&layer_shell->events.new_surface, createlayersurface);
 
 	idle_notifier = wlr_idle_notifier_v1_create(dpy);
