@@ -183,7 +183,7 @@ static const PassKeypressRule pass_rules[] = {
 
 /* commands */
 static const char *termcmd[] = {TERMINAL, NULL};
-static const char *menucmd[] = {"wmenu-run", NULL};
+static const char *menucmd[] = {"walker", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
