@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM=wayland
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=dwl
+export XDG_SESSION_DESKTOP=dwl
+
+# Log optional
+LOGDIR="${XDG_STATE_HOME:-$HOME/.local/state}/dwl"
+mkdir -p "$LOGDIR"
+
+exec dbus-run-session sh -c \
+  'exec slstatus -s | exec dwl -s "$HOME/.local/bin/dwl-startup.sh"' \
+  >>"$LOGDIR/dwl.log" 2>&1

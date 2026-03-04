@@ -1,5 +1,7 @@
 [Desktop Entry]
 Name=dwl
-Comment=dwm for Wayland
-Exec=dwl
+Comment=Dynamic wayland compositor
+Exec=dwl-session
 Type=Application
+Keywords=wm;tiling;wayland
+TryExec=dwl
