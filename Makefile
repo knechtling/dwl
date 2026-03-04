@@ -74,22 +74,29 @@ dist: clean
 	tar -caf dwl-$(VERSION).tar.gz dwl-$(VERSION)
 	rm -rf dwl-$(VERSION)
 
-install: dwl dwl.so
+install: dwl
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
 	rm -f $(DESTDIR)$(PREFIX)/bin/dwl
 	cp -f dwl $(DESTDIR)$(PREFIX)/bin
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/dwl
-	mkdir -p $(DESTDIR)$(PREFIX)/lib
-	install -m 744 dwl.so $(DESTDIR)$(PREFIX)/lib
+
+	# install session wrapper
+	rm -f $(DESTDIR)$(PREFIX)/bin/dwl-session
+	cp -f dwl-session $(DESTDIR)$(PREFIX)/bin/dwl-session
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/dwl-session
+
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
 	cp -f dwl.1 $(DESTDIR)$(MANDIR)/man1
 	chmod 644 $(DESTDIR)$(MANDIR)/man1/dwl.1
-	mkdir -p $(DESTDIR)$(DATADIR)/wayland-sessions
-	cp -f dwl.desktop $(DESTDIR)$(DATADIR)/wayland-sessions/dwl.desktop
-	chmod 644 $(DESTDIR)$(DATADIR)/wayland-sessions/dwl.desktop
+
+	mkdir -p $(DESTDIR)/usr/share/wayland-sessions
+	cp -f dwl.desktop $(DESTDIR)/usr/share/wayland-sessions/dwl.desktop
+	chmod 644 $(DESTDIR)/usr/share/wayland-sessions/dwl.desktop
 uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/dwl $(DESTDIR)$(PREFIX)/lib/dwl.so $(DESTDIR)$(MANDIR)/man1/dwl.1 \
-		$(DESTDIR)$(DATADIR)/wayland-sessions/dwl.desktop
+	rm -f $(DESTDIR)$(PREFIX)/bin/dwl \
+	      $(DESTDIR)$(PREFIX)/bin/dwl-session \
+	      $(DESTDIR)$(MANDIR)/man1/dwl.1 \
+	      $(DESTDIR)/usr/share/wayland-sessions/dwl.desktop
 
 .SUFFIXES: .c .o
 .c.o:
