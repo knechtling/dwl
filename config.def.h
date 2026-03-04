@@ -256,7 +256,6 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_Tab, view, {0}},
     {MODKEY, XKB_KEY_g, togglegaps, {0}},
     {MODKEY, XKB_KEY_q, killclient, {0}},
-    {MODKEY, XKB_KEY_y, togglefullscreen, {0}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F, togglefloating, {0}},
     // layouts
     {MODKEY, XKB_KEY_t, setlayout, {.v = &layouts[0]}},
@@ -321,6 +320,4 @@ static const Button buttons[] = {
     {ClkTagBar, 0, BTN_RIGHT, toggleview, {0}},
     {ClkTagBar, MODKEY, BTN_LEFT, tag, {0}},
     {ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
-    {ClkTray, 0, BTN_LEFT, trayactivate, {0}},
-    {ClkTray, 0, BTN_RIGHT, traymenu, {0}},
 };
