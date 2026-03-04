@@ -2,7 +2,6 @@
  * See LICENSE file for copyright and license details.
  */
 
-/* stuff for hot-reload */
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <errno.h>
@@ -127,7 +126,6 @@
     wl_list_remove(&(L)->link);                  \
     listeners = remove_listener((L), listeners); \
   } while (0)
-
 /* enums */
 enum { SchemeNorm,
        SchemeSel,
