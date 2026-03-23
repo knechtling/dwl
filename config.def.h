@@ -5,30 +5,32 @@
 #define EMAILCLIENT "thunderbird"
 
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
-#define COLOR(hex) {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f, (hex & 0xFF) / 255.0f}
+#define COLOR(hex)                                                                                 \
+    {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f,   \
+     (hex & 0xFF) / 255.0f}
 /* appearance */
-static const int sloppyfocus = 1;               /* focus follows mouse */
-static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will disable idle tracking even if it's
-                                                   surface isn't visible  */
-static const int smartgaps = 0;                 /* 1 means no outer gap when there is only one window */
-static int gaps = 1;                            /* 1 means gaps between windows are added */
-static const unsigned int gappx = 10;           /* gap pixel between windows */
-static const unsigned int borderpx = 2;         /* border pixel of windows */
-static const int smartborders              = 1;  /* draw borders only when needed */
-static const unsigned int systrayspacing = 2;   /* systray spacing */
-static const int showsystray = 1;               /* 0 means no systray */
-static const int showbar = 1;                   /* 0 means no bar */
-static const int topbar = 1;                    /* 0 means bottom bar */
-static const char *fonts[] = {"monospace:size=10"};
-static const float rootcolor[] = COLOR(0x000000ff);
+static const int sloppyfocus               = 1; /* focus follows mouse */
+static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will disable idle
+                                                   tracking even if it's surface isn't visible  */
+static const int smartgaps         = 0;  /* 1 means no outer gap when there is only one window */
+static int gaps                    = 1;  /* 1 means gaps between windows are added */
+static const unsigned int gappx    = 10; /* gap pixel between windows */
+static const unsigned int borderpx = 2;  /* border pixel of windows */
+static const int smartborders      = 1;  /* draw borders only when needed */
+static const unsigned int systrayspacing = 2; /* systray spacing */
+static const int showsystray             = 1; /* 0 means no systray */
+static const int showbar                 = 1; /* 0 means no bar */
+static const int topbar                  = 1; /* 0 means bottom bar */
+static const char *fonts[]               = {"monospace:size=10"};
+static const float rootcolor[]           = COLOR(0x000000ff);
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old
  * behavior */
 static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* You can also use glsl colors */
-static uint32_t colors[][3] = {
+static uint32_t colors[][3]        = {
     /*               fg          bg          border    */
     [SchemeNorm] = {0xbbbbbbff, 0x222222ff, 0x444444ff},
-    [SchemeSel] = {0xeeeeeeff, 0x005577ff, 0x0066ccff},
-    [SchemeUrg] = {0, 0, 0x770000ff},
+    [SchemeSel]  = {0xeeeeeeff, 0x005577ff, 0x0066ccff},
+    [SchemeUrg]  = {0, 0, 0x770000ff},
 };
 
 #define TAGCOUNT (9)
@@ -54,7 +56,8 @@ static const Rule rules[] = {
     /* app_id             title         tags mask     isfloating   monitor scratchkey */
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'}, {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'},
+    {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -85,27 +88,27 @@ static const MonitorRule monrules[] = {
 /* keyboard */
 static const struct xkb_rule_names xkb_rules = {
     /* can specify fields: rules, model, layout, variant, options */
-    .rules = NULL,           // use default
-    .model = "pc105",        // common keyboard model
-    .layout = "de",          // German layout
+    .rules   = NULL,         // use default
+    .model   = "pc105",      // common keyboard model
+    .layout  = "de",         // German layout
     .variant = NULL,         // no variant
     .options = "caps:escape" // make capslock additional escape
 };
 
 /* numlock and capslock */
-static const int numlock = 0;
+static const int numlock  = 0;
 static const int capslock = 0;
 
-static const int repeat_rate = 25;
+static const int repeat_rate  = 25;
 static const int repeat_delay = 600;
 
 /* Trackpad */
-static const int tap_to_click = 1;
-static const int tap_and_drag = 1;
-static const int drag_lock = 1;
-static const int natural_scrolling = 0;
-static const int disable_while_typing = 1;
-static const int left_handed = 0;
+static const int tap_to_click            = 1;
+static const int tap_and_drag            = 1;
+static const int drag_lock               = 1;
+static const int natural_scrolling       = 0;
+static const int disable_while_typing    = 1;
+static const int left_handed             = 0;
 static const int middle_button_emulation = 0;
 /* You can choose between:
 LIBINPUT_CONFIG_SCROLL_NO_SCROLL
@@ -120,7 +123,8 @@ LIBINPUT_CONFIG_CLICK_METHOD_NONE
 LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS
 LIBINPUT_CONFIG_CLICK_METHOD_CLICKFINGER
 */
-static const enum libinput_config_click_method click_method = LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS;
+static const enum libinput_config_click_method click_method =
+    LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS;
 
 /* You can choose between:
 LIBINPUT_CONFIG_SEND_EVENTS_ENABLED
@@ -133,7 +137,8 @@ static const uint32_t send_events_mode = LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 LIBINPUT_CONFIG_ACCEL_PROFILE_FLAT
 LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE
 */
-static const enum libinput_config_accel_profile accel_profile = LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE;
+static const enum libinput_config_accel_profile accel_profile =
+    LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE;
 static const double accel_speed = 0.0;
 
 /* You can choose between:
@@ -147,38 +152,40 @@ static const int cursor_timeout = 5;
 /* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
 #define MODKEY WLR_MODIFIER_LOGO
 
-#define TAGKEYS(KEY, SKEY, TAG)                                                                                                                      \
-  {MODKEY, KEY, view, {.ui = 1 << TAG}}, {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},                                            \
-      {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {                                                                                  \
-    MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, { .ui = 1 << TAG }                                                             \
-  }
+#define TAGKEYS(KEY, SKEY, TAG)                                                                    \
+    {MODKEY, KEY, view, {.ui = 1 << TAG}},                                                         \
+        {MODKEY | WLR_MODIFIER_CTRL, KEY, toggleview, {.ui = 1 << TAG}},                           \
+        {MODKEY | WLR_MODIFIER_SHIFT, SKEY, tag, {.ui = 1 << TAG}}, {                              \
+        MODKEY | WLR_MODIFIER_CTRL | WLR_MODIFIER_SHIFT, SKEY, toggletag, { .ui = 1 << TAG }       \
+    }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd)                                                                                                                                   \
-  {                                                                                                                                                  \
-    .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                                                                                             \
-  }
+#define SHCMD(cmd)                                                                                 \
+    {                                                                                              \
+        .v = (const char *[]) { "/bin/sh", "-c", cmd, NULL }                                       \
+    }
 
 #define ADDPASSRULE(S, K) {.appid = S, .len = LENGTH(S), .key = K}
 static const PassKeypressRule pass_rules[] = {
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
-	ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
-	ADDPASSRULE("WebCord", XKB_KEY_n),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_Home),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_End),
+    ADDPASSRULE("com.obsproject.Studio", XKB_KEY_F12),
+    ADDPASSRULE("WebCord", XKB_KEY_n),
 };
 
 /* commands */
-static const char *termcmd[] = {TERMINAL, NULL};
-static const char *menucmd[] = {"wmenu-run", NULL};
+static const char *termcmd[]  = {TERMINAL, NULL};
+static const char *menucmd[]  = {"walker", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
-static const char *scratchpadcmd[] = {"s", TERMINAL, "-T", "scratchpad", NULL};
-static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
-static const char *scratchnetcmd[] = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
-static const char *screenshotcmd[] = {"/home/anton/.local/bin/screenshot.sh", NULL};
+static const char *scratchpadcmd[]    = {"s", TERMINAL, "-T", "scratchpad", NULL};
+static const char *scratchpasscmd[]   = {"p", "bitwarden-desktop", NULL};
+static const char *scratchnetcmd[]    = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
+static const char *screenshotcmd[]    = {"/home/anton/.local/bin/screenshot.sh", NULL};
 static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", NULL};
-static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c", NULL};
+static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c",
+                                             NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -195,14 +202,30 @@ static const Key keys[] = {
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_s, spawn, SHCMD("$HOME/.local/bin/dwl-startup.sh")},
-    // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")},
-    // {MODKEY, XKB_KEY_F2, spawn, {.v = (const char *[]){"tutorialvids", NULL}}},
+    // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura
+    // /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")}, {MODKEY, XKB_KEY_F2, spawn,
+    // {.v = (const char *[]){"tutorialvids", NULL}}},
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_u, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_m, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_w, spawn, {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_p, spawn, {.v = (const char *[]){"/home/anton/.local/bin/maimpick-wl", NULL}}},
-    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_r, spawn, {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_u,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenuhandler", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_m,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenumountcifs", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_w,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/weblaunch", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_p,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/maimpick-wl", NULL}}},
+    {MODKEY | WLR_MODIFIER_ALT,
+     XKB_KEY_r,
+     spawn,
+     {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
     // {MODKEY, XKB_KEY_F6, spawn, {.v = (const char *[]){"torwrap", NULL}}},
     {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode"}}},
@@ -216,20 +239,35 @@ static const Key keys[] = {
     // "--profile=low-latency --input-conf=/dev/null --title=webcam $(ls "
     // "/dev/video[0,2,4,6,8] | tail -n 1)")},
     {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_R, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_R,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
     {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn,
+     SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
     {MODKEY, XKB_KEY_plus, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%+")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn,
+     SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%+")},
     {MODKEY, XKB_KEY_w, spawn, {.v = (const char *[]){BROWSER, NULL}}},
     {MODKEY, XKB_KEY_z, spawn, {.v = (const char *[]){MUSICPLAYER, NULL}}},
     {MODKEY, XKB_KEY_e, spawn, {.v = (const char *[]){EMAILCLIENT, NULL}}},
     {MODKEY, XKB_KEY_r, spawn, {.v = (const char *[]){TERMINAL, "-e", "lfub", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_H, spawn, {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Y, spawn, {.v = (const char *[]){TERMINAL, "-e", "ytfzf", "-t", NULL}}},
-    {MODKEY, XKB_KEY_n, spawn, {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_H,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "htop", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT,
+     XKB_KEY_Y,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "ytfzf", "-t", NULL}}},
+    {MODKEY,
+     XKB_KEY_n,
+     spawn,
+     {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn,
+     SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
     {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
     {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F8, spawn, {.v = screenshotselcopycmd}},
@@ -243,8 +281,14 @@ static const Key keys[] = {
     {0, XKB_KEY_XF86AudioPause, spawn, {.v = (const char *[]){"mpc", "pause", NULL}}},
     {0, XKB_KEY_XF86AudioPlay, spawn, {.v = (const char *[]){"mpc", "play", NULL}}},
     {0, XKB_KEY_XF86AudioStop, spawn, {.v = (const char *[]){"mpc", "stop", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessUp, spawn, {.v = (const char *[]){"brightnessctl", "set", "+15%", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessDown, spawn, {.v = (const char *[]){"brightnessctl", "set", "15%-", NULL}}},
+    {0,
+     XKB_KEY_XF86MonBrightnessUp,
+     spawn,
+     {.v = (const char *[]){"brightnessctl", "set", "+15%", NULL}}},
+    {0,
+     XKB_KEY_XF86MonBrightnessDown,
+     spawn,
+     {.v = (const char *[]){"brightnessctl", "set", "15%-", NULL}}},
     // Windows
     {MODKEY, XKB_KEY_j, focusstack, {.i = +1}},
     {MODKEY, XKB_KEY_k, focusstack, {.i = -1}},
@@ -292,10 +336,10 @@ static const Key keys[] = {
 /* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
  * do not remove them.
  */
-#define CHVT(n)                                                                                                                                      \
-  {                                                                                                                                                  \
-    WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, { .ui = (n) }                                                             \
-  }
+#define CHVT(n)                                                                                    \
+    {                                                                                              \
+        WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, { .ui = (n) }       \
+    }
     CHVT(1),
     CHVT(2),
     CHVT(3),
