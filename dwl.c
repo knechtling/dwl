@@ -400,6 +400,7 @@ static void spawn(const Arg *arg);
 static void spawnscratch(const Arg *arg);
 static void startdrag(struct wl_listener *listener, void *data);
 static int statusin(int fd, unsigned int mask, void *data);
+static void statuscmd(const Arg *arg);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
@@ -497,6 +498,7 @@ static Monitor *selmon;
 
 static char stext[256];
 static struct wl_event_source *status_event_source;
+static unsigned int statussig;
 
 static DBusConnection *bus_conn;
 static struct wl_event_source *bus_source;
@@ -832,6 +834,39 @@ buttonpress(struct wl_listener *listener, void *data)
 				arg.ui = ti;
 			} else if (cx > selmon->b.width - (TEXTW(selmon, stext) - selmon->lrpad + 2 + traywidth)) {
 				click = ClkStatus;
+				/* Determine which status module was clicked by walking stext.
+				 * Signal bytes 0x01-0x1E mark module boundaries; the byte
+				 * value is the signal number for that module. */
+				{
+					char buf[sizeof(stext)];
+					const char *p = stext;
+					double sx = selmon->b.width
+					    - (drwl_font_getwidth(selmon->drw, stext) + 2 + traywidth);
+					unsigned int sig = 0;
+					statussig = 0;
+					while (*p) {
+						/* collect printable segment up to next marker */
+						const char *seg = p;
+						while (*p && ((unsigned char)*p < 1 ||
+						             (unsigned char)*p > 30))
+							p++;
+						if (p > seg) {
+							int len = p - seg;
+							memcpy(buf, seg, len);
+							buf[len] = '\0';
+							sx += drwl_font_getwidth(selmon->drw, buf);
+							if (cx < sx) {
+								statussig = sig;
+								break;
+							}
+						}
+						if (*p && (unsigned char)*p >= 1 &&
+						    (unsigned char)*p <= 30)
+							sig = (unsigned char)*p++;
+					}
+					if (!statussig)
+						statussig = sig; /* last segment */
+				}
 			} else
 				click = ClkTitle;
 		}
@@ -3309,6 +3344,17 @@ statusin(int fd, unsigned int mask, void *data)
 	drawbars();
 
 	return 0;
+}
+
+void
+statuscmd(const Arg *arg)
+{
+	const char *cmd;
+	if (!statussig || statussig > LENGTH(statuscmds))
+		return;
+	cmd = statuscmds[statussig - 1][arg->ui - 1];
+	if (cmd)
+		spawn(&(const Arg){.v = (const char *[]){ "/bin/sh", "-c", cmd, NULL }});
 }
 
 void

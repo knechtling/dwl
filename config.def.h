@@ -178,6 +178,17 @@ static const char *termcmd[]  = {TERMINAL, NULL};
 static const char *menucmd[]  = {"walker", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
+/* statuscmd: commands run when clicking status bar modules.
+ * slstatus must prepend \x01, \x02, ... to each module's output.
+ * statuscmds[signal-1][button-1]: button 1=left 2=middle 3=right.
+ * NULL = no action. */
+static const char *const statuscmds[][3] = {
+	/* signal  left-click                        middle-click  right-click */
+	[0] = { TERMINAL " -e pulsemixer",           NULL,         NULL },  /* 1: volume */
+	[1] = { TERMINAL " -e btop",                 NULL,         NULL },  /* 2: cpu/mem */
+	[2] = { TERMINAL " -e nmtui",                NULL,         NULL },  /* 3: network */
+};
+
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[]  = {"s", TERMINAL, "-T", "scratchpad", NULL};
 static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
@@ -380,4 +391,7 @@ static const Button buttons[] = {
 	{ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
 	{ClkTray,   0,      BTN_LEFT,  trayactivate, {0}},
 	{ClkTray,   0,      BTN_RIGHT, traymenu,     {0}},
+	{ClkStatus, 0,      BTN_LEFT,  statuscmd,    {.ui = 1}},
+	{ClkStatus, 0,      BTN_MIDDLE, statuscmd,   {.ui = 2}},
+	{ClkStatus, 0,      BTN_RIGHT, statuscmd,    {.ui = 3}},
 };
