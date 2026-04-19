@@ -822,9 +822,7 @@ buttonpress(struct wl_listener *listener, void *data)
 				arg.ui = 1 << i;
 			} else if (cx < x + TEXTW(selmon, selmon->ltsymbol))
 				click = ClkLtSymbol;
-			else if (cx > selmon->b.width - (TEXTW(selmon, stext) - selmon->lrpad + 2) && cx < selmon->b.width - traywidth) {
-				click = ClkStatus;
-			} else if (cx > selmon->b.width - (TEXTW(selmon, stext) - selmon->lrpad + 2)) {
+			else if (traywidth && cx >= selmon->b.width - traywidth) {
 				unsigned int tray_n_items = watcher_get_n_items(&watcher);
 				tx = selmon->b.width - traywidth;
 				do
@@ -832,6 +830,8 @@ buttonpress(struct wl_listener *listener, void *data)
 				while (cx >= tx && ++ti < tray_n_items);
 				click = ClkTray;
 				arg.ui = ti;
+			} else if (cx > selmon->b.width - (TEXTW(selmon, stext) - selmon->lrpad + 2 + traywidth)) {
+				click = ClkStatus;
 			} else
 				click = ClkTitle;
 		}
