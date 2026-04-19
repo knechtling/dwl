@@ -181,7 +181,7 @@ startbus(DBusConnection *conn, struct wl_event_loop *loop)
 	pipefd = ecalloc(2, sizeof(int));
 
 	/*
-	 * Libdbus forbids calling dbus_connection_dipatch from the
+	 * Libdbus forbids calling dbus_connection_dispatch from the
 	 * DBusDispatchStatusFunction directly. Notify the event loop of
 	 * updates via a self-pipe.
 	 */
