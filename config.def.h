@@ -179,13 +179,10 @@ static const char *menucmd[]  = {"walker", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* named scratchpads - First arg only serves to match against key in rules*/
-static const char *scratchpadcmd[]    = {"s", TERMINAL, "-T", "scratchpad", NULL};
-static const char *scratchpasscmd[]   = {"p", "bitwarden-desktop", NULL};
-static const char *scratchnetcmd[]    = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
-static const char *screenshotcmd[]    = {"/home/anton/.local/bin/screenshot.sh", NULL};
-static const char *screenshotselcmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", NULL};
-static const char *screenshotselcopycmd[] = {"/home/anton/.local/bin/screenshot.sh", "-s", "-c",
-                                             NULL};
+static const char *scratchpadcmd[]  = {"s", TERMINAL, "-T", "scratchpad", NULL};
+static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
+static const char *scratchnetcmd[]  = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
+static const char *screenshotcmd[]  = {"/home/anton/.local/bin/screenshot.sh", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -201,7 +198,6 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_s, spawn, SHCMD("$HOME/.local/bin/dwl-startup.sh")},
     // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura
     // /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")}, {MODKEY, XKB_KEY_F2, spawn,
     // {.v = (const char *[]){"tutorialvids", NULL}}},
@@ -268,27 +264,44 @@ static const Key keys[] = {
      {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn,
      SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
+    // screenshots
+    {MODKEY, XKB_KEY_Print, spawn, {.v = screenshotcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Print, spawn, {.v = screenshotcmd}},
+    {MODKEY, XKB_KEY_s, spawn, {.v = screenshotcmd}},
     {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotselcmd}},
-    {MODKEY | WLR_MODIFIER_CTRL, XKB_KEY_F8, spawn, {.v = screenshotselcopycmd}},
-    // XF86 Media Keys
-    {0, XKB_KEY_XF86AudioMute, spawn, SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
-    {0, XKB_KEY_XF86AudioMicMute, spawn, SHCMD("pactl set-source-mute @DEFAULT_SOURCE@ toggle")},
-    {0, XKB_KEY_XF86AudioRaiseVolume, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 3%+")},
-    {0, XKB_KEY_XF86AudioLowerVolume, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 3%-")},
-    {0, XKB_KEY_XF86AudioPrev, spawn, {.v = (const char *[]){"mpc", "prev", NULL}}},
-    {0, XKB_KEY_XF86AudioNext, spawn, {.v = (const char *[]){"mpc", "next", NULL}}},
-    {0, XKB_KEY_XF86AudioPause, spawn, {.v = (const char *[]){"mpc", "pause", NULL}}},
-    {0, XKB_KEY_XF86AudioPlay, spawn, {.v = (const char *[]){"mpc", "play", NULL}}},
-    {0, XKB_KEY_XF86AudioStop, spawn, {.v = (const char *[]){"mpc", "stop", NULL}}},
-    {0,
-     XKB_KEY_XF86MonBrightnessUp,
-     spawn,
-     {.v = (const char *[]){"brightnessctl", "set", "+15%", NULL}}},
-    {0,
-     XKB_KEY_XF86MonBrightnessDown,
-     spawn,
-     {.v = (const char *[]){"brightnessctl", "set", "15%-", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
+    // XF86 Media Keys (via swayosd-client for OSD feedback)
+    {0, XKB_KEY_XF86AudioMute, spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume", "mute-toggle", NULL}}},
+    {0, XKB_KEY_XF86AudioMicMute, spawn,
+     {.v = (const char *[]){"swayosd-client", "--input-volume", "mute-toggle", NULL}}},
+    {0, XKB_KEY_XF86AudioRaiseVolume, spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume", "raise", NULL}}},
+    {0, XKB_KEY_XF86AudioLowerVolume, spawn,
+     {.v = (const char *[]){"swayosd-client", "--output-volume", "lower", NULL}}},
+    {0, XKB_KEY_XF86AudioPrev, spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl", "prev", NULL}}},
+    {0, XKB_KEY_XF86AudioNext, spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl", "next", NULL}}},
+    {0, XKB_KEY_XF86AudioPause, spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl", "play-pause", NULL}}},
+    {0, XKB_KEY_XF86AudioPlay, spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl", "play-pause", NULL}}},
+    {0, XKB_KEY_XF86AudioStop, spawn,
+     {.v = (const char *[]){"swayosd-client", "--playerctl", "stop", NULL}}},
+    {0, XKB_KEY_XF86MonBrightnessUp, spawn,
+     {.v = (const char *[]){"swayosd-client", "--brightness", "raise", NULL}}},
+    {0, XKB_KEY_XF86MonBrightnessDown, spawn,
+     {.v = (const char *[]){"swayosd-client", "--brightness", "lower", NULL}}},
+    // MX Mechanical Mini F-row (diverted via Solaar -> XF86_Launch* / XF86Search)
+    // F7 Emoji -> unicode/emoji picker
+    {0, XKB_KEY_XF86Launch1, spawn, {.v = (const char *[]){"dmenuunicode", NULL}}},
+    // F8 Screen Capture -> region screenshot
+    {0, XKB_KEY_XF86Launch0, spawn, {.v = (const char *[]){"screenshot.sh", "-s", NULL}}},
+    // F6 Dictation -> audio/screen recorder toggle (closest mic-related tool)
+    {0, XKB_KEY_XF86Launch2, spawn, {.v = (const char *[]){"dmenurecord", NULL}}},
+    // F10 Search -> primary app launcher
+    {0, XKB_KEY_XF86Search, spawn, {.v = menucmd}},
     // Windows
     {MODKEY, XKB_KEY_j, focusstack, {.i = +1}},
     {MODKEY, XKB_KEY_k, focusstack, {.i = -1}},
@@ -310,6 +323,7 @@ static const Key keys[] = {
     // menus
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_o, menu, {.v = &menus[1]}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_S, menu, {.v = &menus[1]}},
     // tags
     {MODKEY, XKB_KEY_0, view, {.ui = ~0}},
     {MODKEY, XKB_KEY_v, winview, {0}},
@@ -362,6 +376,8 @@ static const Button buttons[] = {
     {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},
     {ClkTagBar, 0, BTN_LEFT, view, {0}},
     {ClkTagBar, 0, BTN_RIGHT, toggleview, {0}},
-    {ClkTagBar, MODKEY, BTN_LEFT, tag, {0}},
-    {ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
+	{ClkTagBar, MODKEY, BTN_LEFT, tag, {0}},
+	{ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
+	{ClkTray,   0,      BTN_LEFT,  trayactivate, {0}},
+	{ClkTray,   0,      BTN_RIGHT, traymenu,     {0}},
 };
