@@ -179,14 +179,21 @@ static const char *menucmd[]  = {"walker", NULL};
 static const char *dmenucmd[] = {"wmenu", NULL};
 
 /* statuscmd: commands run when clicking status bar modules.
- * slstatus must prepend \x01, \x02, ... to each module's output.
  * statuscmds[signal-1][button-1]: button 1=left 2=middle 3=right.
- * NULL = no action. */
+ * Signal numbers match the \x01-\x0B prefixes in slstatus config.h. */
 static const char *const statuscmds[][3] = {
-	/* signal  left-click                        middle-click  right-click */
-	[0] = { TERMINAL " -e pulsemixer",           NULL,         NULL },  /* 1: volume */
-	[1] = { TERMINAL " -e btop",                 NULL,         NULL },  /* 2: cpu/mem */
-	[2] = { TERMINAL " -e nmtui",                NULL,         NULL },  /* 3: network */
+	/* signal  left-click                           middle  right */
+	[0x01-1] = { "/home/anton/.local/bin/dmenurecord", NULL, NULL }, /* 1: recording */
+	[0x02-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 2: net rx */
+	[0x03-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 3: net tx */
+	[0x04-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 4: ipv4 */
+	[0x05-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 5: cpu */
+	[0x06-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 6: ram */
+	[0x07-1] = { TERMINAL " -e lf",                   NULL, NULL }, /* 7: disk used */
+	[0x08-1] = { TERMINAL " -e lf",                   NULL, NULL }, /* 8: disk perc */
+	[0x09-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 9: temp */
+	[0x0a-1] = { TERMINAL " -e pulsemixer",            NULL, NULL }, /* 10: volume */
+	[0x0b-1] = { NULL,                                 NULL, NULL }, /* 11: datetime */
 };
 
 /* named scratchpads - First arg only serves to match against key in rules*/
