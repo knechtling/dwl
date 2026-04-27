@@ -8,6 +8,7 @@
 #define COLOR(hex)                                                                                 \
     {((hex >> 24) & 0xFF) / 255.0f, ((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f,   \
      (hex & 0xFF) / 255.0f}
+
 /* appearance */
 static const int sloppyfocus               = 1; /* focus follows mouse */
 static const int bypass_surface_visibility = 0; /* 1 means idle inhibitors will disable idle
@@ -23,10 +24,12 @@ static const int showbar                 = 1; /* 0 means no bar */
 static const int topbar                  = 1; /* 0 means bottom bar */
 static const char *fonts[]               = {"monospace:size=10"};
 static const float rootcolor[]           = COLOR(0x000000ff);
+
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old
  * behavior */
 static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* You can also use glsl colors */
-static uint32_t colors[][3]        = {
+
+static uint32_t colors[][3] = {
     /*               fg          bg          border    */
     [SchemeNorm] = {0xbbbbbbff, 0x222222ff, 0x444444ff},
     [SchemeSel]  = {0xeeeeeeff, 0x005577ff, 0x0066ccff},
@@ -53,11 +56,12 @@ static const Menu menus[] = {
 /* NOTE: ALWAYS keep a rule declared even if you don't use rules (e.g leave at
  * least one example) */
 static const Rule rules[] = {
-    /* app_id             title         tags mask     isfloating   monitor scratchkey */
-    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags floating, not tiled */
-    {NULL, "floating", 0, 1, -1, 0},     /* Start on ONLY tag "9" */
-    {NULL, "scratchpad", 0, 1, -1, 's'}, {NULL, "Bitwarden", 0, 1, -1, 'p'},
-    {NULL, "scratchnet", 0, 1, -1, 'n'},
+    /* app_id             title         tags mask     isfloating   monitor
+       scratchkey */
+    {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags
+                                            floating, not tiled */
+    {NULL, "floating", 0, 1, -1, 0},     {NULL, "scratchpad", 0, 1, -1, 's'},
+    {NULL, "Bitwarden", 0, 1, -1, 'p'},  {NULL, "scratchnet", 0, 1, -1, 'n'},
 };
 
 /* layout(s) */
@@ -110,6 +114,7 @@ static const int natural_scrolling       = 0;
 static const int disable_while_typing    = 1;
 static const int left_handed             = 0;
 static const int middle_button_emulation = 0;
+
 /* You can choose between:
 LIBINPUT_CONFIG_SCROLL_NO_SCROLL
 LIBINPUT_CONFIG_SCROLL_2FG
@@ -182,18 +187,18 @@ static const char *dmenucmd[] = {"wmenu", NULL};
  * statuscmds[signal-1][button-1]: button 1=left 2=middle 3=right.
  * Signal numbers match the \x01-\x0B prefixes in slstatus config.h. */
 static const char *const statuscmds[][3] = {
-	/* signal  left-click                           middle  right */
-	[0x01-1] = { "/home/anton/.local/bin/dmenurecord", NULL, NULL }, /* 1: recording */
-	[0x02-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 2: net rx */
-	[0x03-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 3: net tx */
-	[0x04-1] = { TERMINAL " -e nmtui",                NULL, NULL }, /* 4: ipv4 */
-	[0x05-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 5: cpu */
-	[0x06-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 6: ram */
-	[0x07-1] = { TERMINAL " -e lf",                   NULL, NULL }, /* 7: disk used */
-	[0x08-1] = { TERMINAL " -e lf",                   NULL, NULL }, /* 8: disk perc */
-	[0x09-1] = { TERMINAL " -e btop",                 NULL, NULL }, /* 9: temp */
-	[0x0a-1] = { TERMINAL " -e pulsemixer",            NULL, NULL }, /* 10: volume */
-	[0x0b-1] = { NULL,                                 NULL, NULL }, /* 11: datetime */
+    /* signal  left-click                           middle  right */
+    [0x01 - 1] = {"/home/anton/.local/bin/dmenurecord", NULL, NULL}, /* 1: recording */
+    [0x02 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 2: net rx */
+    [0x03 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 3: net tx */
+    [0x04 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 4: ipv4 */
+    [0x05 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 5: cpu */
+    [0x06 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 6: ram */
+    [0x07 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 7: disk used */
+    [0x08 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 8: disk perc */
+    [0x09 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 9: temp */
+    [0x0a - 1] = {TERMINAL " -e pulsemixer", NULL, NULL},            /* 10: volume */
+    [0x0b - 1] = {NULL, NULL, NULL},                                 /* 11: datetime */
 };
 
 /* named scratchpads - First arg only serves to match against key in rules*/
@@ -205,6 +210,7 @@ static const char *screenshotcmd[]  = {"/home/anton/.local/bin/screenshot.sh", N
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
     /* modifier                  key                 function        argument */
+
     // system
     {MODKEY, XKB_KEY_d, spawn, {.v = menucmd}},
     {MODKEY, XKB_KEY_Return, spawn, {.v = termcmd}},
@@ -214,11 +220,9 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
+
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
-    // {MODKEY, XKB_KEY_F1, spawn, SHCMD("zathura
-    // /home/anton/Nextcloud/dox/important/tud-indexed-secret.pdf")}, {MODKEY, XKB_KEY_F2, spawn,
-    // {.v = (const char *[]){"tutorialvids", NULL}}},
     {MODKEY, XKB_KEY_F3, spawn, {.v = (const char *[]){"displayselect", NULL}}},
     {MODKEY | WLR_MODIFIER_ALT,
      XKB_KEY_u,
@@ -241,29 +245,18 @@ static const Key keys[] = {
      spawn,
      {.v = (const char *[]){"/home/anton/.local/bin/dmenurecord", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
-    // {MODKEY, XKB_KEY_F6, spawn, {.v = (const char *[]){"torwrap", NULL}}},
-    {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode"}}},
-    // NULL}}}, {MODKEY, XKB_KEY_F8, spawn, {.v = (const char *[]){"maimpick",
-    // NULL}}}, {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = (const
-    // char *[]){"ss-uni", NULL}}}, {MODKEY, XKB_KEY_F9, spawn, {.v = (const
-    // char *[]){"mounter", NULL}}}, {MODKEY, XKB_KEY_F10, spawn, {.v = (const
-    // char *[]){"unmounter", NULL}}},
-    // {MODKEY, XKB_KEY_F11, spawn,
-    // SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings "
-    // "--profile=low-latency --input-conf=/dev/null --title=webcam $(ls "
-    // "/dev/video[0,2,4,6,8] | tail -n 1)")},
+    {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode", NULL}}},
     {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT,
      XKB_KEY_R,
      spawn,
      {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
-    {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop"}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn,
-     SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%-")},
-    {MODKEY, XKB_KEY_plus, spawn, SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+")},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn,
-     SHCMD("wpctl set-volume @DEFAULT_AUDIO_SINK@ 15%+")},
+    {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop", NULL}}},
+
+    {MODKEY, XKB_KEY_plus, spawn, SHCMD("swayosd-client --output-volume +5")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_plus, spawn, SHCMD("swayosd-client --output-volume +15")},
+
     {MODKEY, XKB_KEY_w, spawn, {.v = (const char *[]){BROWSER, NULL}}},
     {MODKEY, XKB_KEY_z, spawn, {.v = (const char *[]){MUSICPLAYER, NULL}}},
     {MODKEY, XKB_KEY_e, spawn, {.v = (const char *[]){EMAILCLIENT, NULL}}},
@@ -280,37 +273,6 @@ static const Key keys[] = {
      XKB_KEY_n,
      spawn,
      {.v = (const char *[]){TERMINAL, "-e", "nvim", "-c", "WikiIndex", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_M, spawn,
-     SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
-    // screenshots
-    {MODKEY, XKB_KEY_Print, spawn, {.v = screenshotcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Print, spawn, {.v = screenshotcmd}},
-    {MODKEY, XKB_KEY_s, spawn, {.v = screenshotcmd}},
-    {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
-    // XF86 Media Keys (via swayosd-client for OSD feedback)
-    {0, XKB_KEY_XF86AudioMute, spawn,
-     {.v = (const char *[]){"swayosd-client", "--output-volume", "mute-toggle", NULL}}},
-    {0, XKB_KEY_XF86AudioMicMute, spawn,
-     {.v = (const char *[]){"swayosd-client", "--input-volume", "mute-toggle", NULL}}},
-    {0, XKB_KEY_XF86AudioRaiseVolume, spawn,
-     {.v = (const char *[]){"swayosd-client", "--output-volume", "raise", NULL}}},
-    {0, XKB_KEY_XF86AudioLowerVolume, spawn,
-     {.v = (const char *[]){"swayosd-client", "--output-volume", "lower", NULL}}},
-    {0, XKB_KEY_XF86AudioPrev, spawn,
-     {.v = (const char *[]){"swayosd-client", "--playerctl", "prev", NULL}}},
-    {0, XKB_KEY_XF86AudioNext, spawn,
-     {.v = (const char *[]){"swayosd-client", "--playerctl", "next", NULL}}},
-    {0, XKB_KEY_XF86AudioPause, spawn,
-     {.v = (const char *[]){"swayosd-client", "--playerctl", "play-pause", NULL}}},
-    {0, XKB_KEY_XF86AudioPlay, spawn,
-     {.v = (const char *[]){"swayosd-client", "--playerctl", "play-pause", NULL}}},
-    {0, XKB_KEY_XF86AudioStop, spawn,
-     {.v = (const char *[]){"swayosd-client", "--playerctl", "stop", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessUp, spawn,
-     {.v = (const char *[]){"swayosd-client", "--brightness", "raise", NULL}}},
-    {0, XKB_KEY_XF86MonBrightnessDown, spawn,
-     {.v = (const char *[]){"swayosd-client", "--brightness", "lower", NULL}}},
     // MX Mechanical Mini F-row (diverted via Solaar -> XF86_Launch* / XF86Search)
     // F7 Emoji -> unicode/emoji picker
     {0, XKB_KEY_XF86Launch1, spawn, {.v = (const char *[]){"dmenuunicode", NULL}}},
@@ -320,6 +282,22 @@ static const Key keys[] = {
     {0, XKB_KEY_XF86Launch2, spawn, {.v = (const char *[]){"dmenurecord", NULL}}},
     // F10 Search -> primary app launcher
     {0, XKB_KEY_XF86Search, spawn, {.v = menucmd}},
+    {MODKEY, XKB_KEY_F8, spawn, {.v = screenshotcmd}},
+    {MODKEY, XKB_KEY_s, spawn, {.v = screenshotcmd}},
+
+    // XF86 Media Keys
+    {0, XKB_KEY_XF86AudioMute, spawn, SHCMD("swayosd-client --output-volume mute-toggle")},
+    {0, XKB_KEY_XF86AudioMicMute, spawn, SHCMD("swayosd-client --input-volume mute-toggle")},
+    {0, XKB_KEY_XF86AudioRaiseVolume, spawn, SHCMD("swayosd-client --output-volume +3")},
+    {0, XKB_KEY_XF86AudioLowerVolume, spawn, SHCMD("swayosd-client --output-volume -3")},
+    {0, XKB_KEY_XF86AudioPrev, spawn, SHCMD("swayosd-client --playerctl prev --player auto")},
+    {0, XKB_KEY_XF86AudioNext, spawn, SHCMD("swayosd-client --playerctl next --player auto")},
+    {0, XKB_KEY_XF86AudioPause, spawn, SHCMD("swayosd-client --playerctl pause --player auto")},
+    {0, XKB_KEY_XF86AudioPlay, spawn, SHCMD("swayosd-client --playerctl play --player auto")},
+    {0, XKB_KEY_XF86AudioStop, spawn, SHCMD("swayosd-client --playerctl stop --player auto")},
+    {0, XKB_KEY_XF86MonBrightnessUp, spawn, SHCMD("swayosd-client --brightness +15")},
+    {0, XKB_KEY_XF86MonBrightnessDown, spawn, SHCMD("swayosd-client --brightness -15")},
+
     // Windows
     {MODKEY, XKB_KEY_j, focusstack, {.i = +1}},
     {MODKEY, XKB_KEY_k, focusstack, {.i = -1}},
@@ -332,16 +310,16 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_g, togglegaps, {0}},
     {MODKEY, XKB_KEY_q, killclient, {0}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F, togglefloating, {0}},
+
     // layouts
     {MODKEY, XKB_KEY_t, setlayout, {.v = &layouts[0]}},
     {MODKEY, XKB_KEY_f, setlayout, {.v = &layouts[1]}},
     {MODKEY, XKB_KEY_m, setlayout, {.v = &layouts[2]}},
-    // {MODKEY, XKB_KEY_space, setlayout, {0}},
-    //
+
     // menus
     {MODKEY, XKB_KEY_o, menu, {.v = &menus[0]}},
     {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_o, menu, {.v = &menus[1]}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_S, menu, {.v = &menus[1]}},
+
     // tags
     {MODKEY, XKB_KEY_0, view, {.ui = ~0}},
     {MODKEY, XKB_KEY_v, winview, {0}},
@@ -365,6 +343,7 @@ static const Key keys[] = {
 
     /* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
     {WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_Terminate_Server, quit, {0}},
+
 /* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
  * do not remove them.
  */
@@ -372,6 +351,7 @@ static const Key keys[] = {
     {                                                                                              \
         WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_XF86Switch_VT_##n, chvt, { .ui = (n) }       \
     }
+
     CHVT(1),
     CHVT(2),
     CHVT(3),
@@ -394,11 +374,11 @@ static const Button buttons[] = {
     {ClkClient, MODKEY, BTN_RIGHT, moveresize, {.ui = CurResize}},
     {ClkTagBar, 0, BTN_LEFT, view, {0}},
     {ClkTagBar, 0, BTN_RIGHT, toggleview, {0}},
-	{ClkTagBar, MODKEY, BTN_LEFT, tag, {0}},
-	{ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
-	{ClkTray,   0,      BTN_LEFT,  trayactivate, {0}},
-	{ClkTray,   0,      BTN_RIGHT, traymenu,     {0}},
-	{ClkStatus, 0,      BTN_LEFT,  statuscmd,    {.ui = 1}},
-	{ClkStatus, 0,      BTN_MIDDLE, statuscmd,   {.ui = 2}},
-	{ClkStatus, 0,      BTN_RIGHT, statuscmd,    {.ui = 3}},
+    {ClkTagBar, MODKEY, BTN_LEFT, tag, {0}},
+    {ClkTagBar, MODKEY, BTN_RIGHT, toggletag, {0}},
+    {ClkTray, 0, BTN_LEFT, trayactivate, {0}},
+    {ClkTray, 0, BTN_RIGHT, traymenu, {0}},
+    {ClkStatus, 0, BTN_LEFT, statuscmd, {.ui = 1}},
+    {ClkStatus, 0, BTN_MIDDLE, statuscmd, {.ui = 2}},
+    {ClkStatus, 0, BTN_RIGHT, statuscmd, {.ui = 3}},
 };
