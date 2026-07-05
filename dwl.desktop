@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=dwl
-Comment=dwm for Wayland
+Name=dwl-forge
+Comment=dwm for Wayland, hand-forged
 Exec=dwl
 Type=Application
