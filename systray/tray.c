@@ -145,6 +145,7 @@ destroytray(Tray *tray)
 		pixman_image_unref(tray->image);
 	if (tray->font)
 		fcft_destroy(tray->font);
+	wl_list_remove(&tray->link);
 	free(tray);
 }
 

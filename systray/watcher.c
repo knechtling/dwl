@@ -189,6 +189,11 @@ respond_register_item(Watcher *watcher, DBusConnection *conn, DBusMessage *msg)
 	}
 
 	item = createitem(registree_name, busobj, watcher);
+	if (!item) {
+		reply = dbus_message_new_error(msg, DBUS_ERROR_NO_MEMORY,
+		                               "Couldn't create item");
+		goto send;
+	}
 	wl_list_insert(&watcher->items, &item->link);
 	watcher_update_trays(watcher);
 
