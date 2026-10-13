@@ -164,11 +164,19 @@ respond_register_item(Watcher *watcher, DBusConnection *conn, DBusMessage *msg)
 		busobj = SNI_OPATH;
 		break;
 	default:
-		reply = dbus_message_new_error_printf(msg,
-		                                      DBUS_ERROR_INVALID_ARGS,
-		                                      "Bad argument: \"%s\"",
-		                                      param);
-		goto send;
+		/*
+		 * A well-known name like "org.kde.StatusNotifierItem-PID-N",
+		 * owned by the sender (libappindicator, ksni, ...).
+		 */
+		if (!dbus_validate_bus_name(param, NULL)) {
+			reply = dbus_message_new_error_printf(
+				msg, DBUS_ERROR_INVALID_ARGS,
+				"Bad argument: \"%s\"", param);
+			goto send;
+		}
+		registree_name = sender;
+		busobj = SNI_OPATH;
+		break;
 	}
 
 	if (*registree_name != ':' ||

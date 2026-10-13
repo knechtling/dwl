@@ -74,6 +74,7 @@
 #include "dwl-ipc-unstable-v2-protocol.h"
 #include "util.h"
 #include "drwl.h"
+#include "systray/menu.h"
 #include "systray/tray.h"
 #include "systray/watcher.h"
 
@@ -845,6 +846,19 @@ buttonpress(struct wl_listener *listener, void *data)
 		selmon = xytomon(cursor->x, cursor->y);
 		if (locked)
 			break;
+
+		/* Close an open tray menu when clicking anywhere outside it */
+		if (menu_get_pid() > 0) {
+			struct wlr_surface *surface = NULL;
+			pid_t pid = 0;
+
+			xytonode(cursor->x, cursor->y, &surface, NULL, NULL, NULL, NULL);
+			if (surface)
+				wl_client_get_credentials(wl_resource_get_client(surface->resource),
+						&pid, NULL, NULL);
+			if (pid != menu_get_pid())
+				menu_close();
+		}
 
 		if (!c && !exclusive_focus &&
 			(node = wlr_scene_node_at(&layers[LyrBottom]->node, cursor->x, cursor->y, NULL, NULL)) &&

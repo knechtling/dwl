@@ -15,7 +15,6 @@
 // IWYU pragma: no_include "dbus/dbus-shared.h"
 
 #define RULEBSIZE 256
-#define MIN(A, B) ((A) < (B) ? (A) : (B))
 
 static const char *match_string =
 	"type='signal',"
@@ -205,6 +204,101 @@ fail:
 		dbus_pending_call_unref(pending);
 }
 
+/* Sets the item icon, returns -1 on failure */
+static int
+item_set_icon(Item *item, const uint8_t *buf, int width, int height, int size)
+{
+	Icon *icon;
+
+	if (item->icon && item->icon->size_orig == (size_t)size &&
+	    memcmp(item->icon->buf_orig, buf, size) == 0)
+		return 0; /* Icon didn't change */
+
+	if (!(icon = createicon(buf, width, height, size)))
+		return -1;
+	if (item->icon)
+		destroyicon(item->icon);
+	item->icon = icon;
+	watcher_update_trays(item_get_watcher(item));
+
+	return 0;
+}
+
+static int
+get_string_reply(DBusMessage *reply, const char **str)
+{
+	DBusMessageIter iter, string;
+
+	if (!reply || dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR)
+		return -1;
+	dbus_message_iter_init(reply, &iter);
+	if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_VARIANT)
+		return -1;
+	dbus_message_iter_recurse(&iter, &string);
+	if (dbus_message_iter_get_arg_type(&string) != DBUS_TYPE_STRING)
+		return -1;
+	dbus_message_iter_get_basic(&string, str);
+
+	return 0;
+}
+
+static void
+themepath_ready_handler(DBusPendingCall *pending, void *data)
+{
+	Item *item = data;
+
+	DBusMessage *reply;
+	const char *path;
+
+	reply = dbus_pending_call_steal_reply(pending);
+	if (get_string_reply(reply, &path) == 0) {
+		free(item->icon_themepath);
+		item->icon_themepath = strdup(path);
+	}
+
+	if (reply)
+		dbus_message_unref(reply);
+	dbus_pending_call_unref(pending);
+}
+
+/*
+ * Fallback for items without an IconPixmap (e.g. libayatana-appindicator):
+ * look the IconName up in the icon theme.
+ */
+static void
+iconname_ready_handler(DBusPendingCall *pending, void *data)
+{
+	Item *item = data;
+
+	DBusMessage *reply;
+	const char *name;
+	uint8_t *buf = NULL;
+	int width, height, size;
+
+	reply = dbus_pending_call_steal_reply(pending);
+	if (get_string_reply(reply, &name) == 0 &&
+	    (buf = load_named_icon(name, item->icon_themepath, &width, &height,
+	                           &size)))
+		item_set_icon(item, buf, width, height, size);
+
+	free(buf);
+	if (reply)
+		dbus_message_unref(reply);
+	dbus_pending_call_unref(pending);
+}
+
+static void
+request_named_icon(Item *item)
+{
+	DBusConnection *conn = item_get_connection(item);
+
+	/* Requests are answered in order, so the theme path arrives first */
+	request_property(conn, item->busname, item->busobj, "IconThemePath",
+	                 SNI_IFACE, themepath_ready_handler, item);
+	request_property(conn, item->busname, item->busobj, "IconName",
+	                 SNI_IFACE, iconname_ready_handler, item);
+}
+
 static void
 pixmap_ready_handler(DBusPendingCall *pending, void *data)
 {
@@ -212,13 +306,9 @@ pixmap_ready_handler(DBusPendingCall *pending, void *data)
 
 	DBusMessage *reply = NULL;
 	DBusMessageIter iter, array, select, strct;
-	Icon *icon = NULL;
-	Watcher *watcher;
 	dbus_int32_t width, height;
 	int selected_index, size;
 	const uint8_t *buf;
-
-	watcher = item_get_watcher(item);
 
 	reply = dbus_pending_call_steal_reply(pending);
 	if (!reply || dbus_message_get_type(reply) == DBUS_MESSAGE_TYPE_ERROR)
@@ -242,39 +332,16 @@ pixmap_ready_handler(DBusPendingCall *pending, void *data)
 	for (int i = 0; i < selected_index; i++)
 		dbus_message_iter_next(&strct);
 	buf = extract_image(&strct, &width, &height, &size);
-	if (!buf)
+	if (!buf || item_set_icon(item, buf, width, height, size) < 0)
 		goto fail;
-
-	if (!item->icon) {
-		/* First icon */
-		icon = createicon(buf, width, height, size);
-		if (!icon)
-			goto fail;
-		item->icon = icon;
-		watcher_update_trays(watcher);
-
-	} else if (memcmp(item->icon->buf_orig, buf,
-	                  MIN(item->icon->size_orig, (size_t)size)) != 0) {
-		/* New icon */
-		destroyicon(item->icon);
-		item->icon = NULL;
-		icon = createicon(buf, width, height, size);
-		if (!icon)
-			goto fail;
-		item->icon = icon;
-		watcher_update_trays(watcher);
-
-	} else {
-		/* Icon didn't change */
-	}
 
 	dbus_message_unref(reply);
 	dbus_pending_call_unref(pending);
 	return;
 
 fail:
-	if (icon)
-		destroyicon(icon);
+	/* No usable pixmap, try the icon theme */
+	request_named_icon(item);
 	if (reply)
 		dbus_message_unref(reply);
 	if (pending)
@@ -374,6 +441,7 @@ destroyitem(Item *item)
 	free(item->busname);
 	free(item->busobj);
 	free(item->appid);
+	free(item->icon_themepath);
 	free(item);
 }
 

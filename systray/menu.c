@@ -20,6 +20,7 @@
 
 #define DBUSMENU_IFACE "com.canonical.dbusmenu"
 #define BUFSIZE 512
+#define MENU_BUFSIZE 16384 /* menu text sent to the menu program */
 #define LABEL_MAX 64
 
 typedef struct {
@@ -46,6 +47,9 @@ typedef struct {
 	pid_t menu_pid;
 	int fd;
 } MenuShowContext;
+
+/* pid of the menu program while a menu is open, -1 otherwise */
+static pid_t open_menu_pid = -1;
 
 static int extract_menu (DBusMessageIter *av, struct wl_array *menu);
 static int real_show_menu (Menu *menu, struct wl_array *m);
@@ -96,6 +100,8 @@ menu_show_ctx_finalize(MenuShowContext *ctx, int error)
 		if (waitpid(ctx->menu_pid, NULL, WNOHANG) == 0)
 			kill(ctx->menu_pid, SIGTERM);
 	}
+	if (ctx->menu_pid == open_menu_pid)
+		open_menu_pid = -1;
 
 	if (error)
 		menu_destroy(ctx->menu);
@@ -186,7 +192,7 @@ read_pipe(int fd, uint32_t mask, void *data)
 	char buf[BUFSIZE];
 	ssize_t bytes_read;
 
-	bytes_read = read(fd, buf, BUFSIZE);
+	bytes_read = read(fd, buf, BUFSIZE - 1);
 	/* 0 == Got EOF, menu program closed without writing to stdout */
 	if (bytes_read <= 0)
 		goto fail;
@@ -222,6 +228,7 @@ prepare_show_ctx(struct wl_event_loop *loop, int monitor_fd, int dmenu_pid,
 	ctx->fd_source = fd_src;
 	ctx->fd = monitor_fd;
 	ctx->menu_pid = dmenu_pid;
+	open_menu_pid = dmenu_pid;
 	ctx->layout_node = layout_node;
 	ctx->menu = menu;
 
@@ -246,7 +253,7 @@ write_dmenu_buf(char *buf, struct wl_array *layout_node)
 	wl_array_for_each(mi, layout_node) {
 		curlen += strlen(mi->label) +
 		          2; /* +2 is newline + nul terminator */
-		if (curlen + 1 > BUFSIZE) {
+		if (curlen + 1 > MENU_BUFSIZE) {
 			r = -1;
 			goto fail;
 		}
@@ -263,11 +270,63 @@ fail:
 	return r;
 }
 
+/* Width of the widest label in characters (UTF-8 aware) */
+static int
+widest_label(struct wl_array *layout_node)
+{
+	MenuItem *mi;
+	int max = 0;
+
+	wl_array_for_each(mi, layout_node) {
+		int n = 0;
+		for (const char *c = mi->label; *c; c++)
+			if (((unsigned char)*c & 0xC0) != 0x80)
+				n++;
+		if (n > max)
+			max = n;
+	}
+	return max;
+}
+
+/*
+ * For rofi, size the window to the widest entry so long labels stay
+ * readable while short menus stay narrow. Only called in the child.
+ */
+static const char **
+menu_argv(const char **menucmd, struct wl_array *layout_node)
+{
+	static char width[64];
+	const char *prog = strrchr(menucmd[0], '/');
+	const char **argv;
+	int n = 0, chars;
+
+	prog = prog ? prog + 1 : menucmd[0];
+	if (strcmp(prog, "rofi") != 0)
+		return menucmd;
+
+	while (menucmd[n])
+		n++;
+	if (!(argv = calloc(n + 3, sizeof(*argv))))
+		return menucmd;
+	memcpy(argv, menucmd, n * sizeof(*argv));
+
+	chars = widest_label(layout_node);
+	if (chars < 16)
+		chars = 16;
+	/* + element padding, scrollbar and border */
+	snprintf(width, sizeof(width), "window {width: calc( %dch + 56px );}",
+	         chars);
+	argv[n] = "-theme-str";
+	argv[n + 1] = width;
+
+	return argv;
+}
+
 static int
 real_show_menu(Menu *menu, struct wl_array *layout_node)
 {
 	MenuShowContext *ctx = NULL;
-	char buf[BUFSIZE];
+	char buf[MENU_BUFSIZE];
 	int to_pipe[2], from_pipe[2];
 	pid_t pid;
 
@@ -278,6 +337,8 @@ real_show_menu(Menu *menu, struct wl_array *layout_node)
 	if (pid < 0) {
 		goto fail;
 	} else if (pid == 0) {
+		const char **argv = menu_argv(menu->menucmd, layout_node);
+
 		dup2(to_pipe[0], STDIN_FILENO);
 		dup2(from_pipe[1], STDOUT_FILENO);
 
@@ -286,7 +347,7 @@ real_show_menu(Menu *menu, struct wl_array *layout_node)
 		close(from_pipe[1]);
 		close(from_pipe[0]);
 
-		if (execvp(menu->menucmd[0], (char *const *)menu->menucmd)) {
+		if (execvp(argv[0], (char *const *)argv)) {
 			perror("Error spawning menu program");
 			exit(EXIT_FAILURE);
 		}
@@ -754,4 +815,18 @@ fail:
 	if (msg)
 		dbus_message_unref(msg);
 	free(menu);
+}
+
+pid_t
+menu_get_pid(void)
+{
+	return open_menu_pid;
+}
+
+void
+menu_close(void)
+{
+	/* The menu program exits, read_pipe() sees EOF and cleans up */
+	if (open_menu_pid > 0)
+		kill(open_menu_pid, SIGTERM);
 }

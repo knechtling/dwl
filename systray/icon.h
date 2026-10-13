@@ -22,5 +22,7 @@ FallbackIcon *createfallbackicon (const char *appname, int fgcolor,
                                   struct fcft_font *font);
 void destroyicon (Icon *icon);
 int resize_image (pixman_image_t *orig, int new_width, int new_height);
+uint8_t *load_named_icon (const char *name, const char *themepath, int *width,
+                          int *height, int *size);
 
 #endif /* ICON_H */

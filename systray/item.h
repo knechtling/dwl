@@ -25,6 +25,7 @@ typedef struct Item {
 	char *busobj;
 	char *menu_busobj;
 	char *appid;
+	char *icon_themepath;
 	Icon *icon;
 	FallbackIcon *fallback_icon;
 
