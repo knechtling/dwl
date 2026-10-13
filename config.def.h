@@ -1,5 +1,5 @@
 // Constants
-#define TERMINAL "foot"
+#define TERMINAL "kitty"
 #define BROWSER "firefox"
 #define MUSICPLAYER "feishin"
 #define EMAILCLIENT "thunderbird"
@@ -180,8 +180,8 @@ static const PassKeypressRule pass_rules[] = {
 
 /* commands */
 static const char *termcmd[]  = {TERMINAL, NULL};
-static const char *menucmd[]  = {"walker", NULL};
-static const char *dmenucmd[] = {"wmenu", NULL};
+static const char *menucmd[]  = {"app-launcher", NULL};
+static const char *dmenucmd[] = {"rofi", "-dmenu", "-theme", "traymenu", NULL};
 
 /* statuscmd: commands run when clicking status bar modules.
  * statuscmds[signal-1][button-1]: button 1=left 2=middle 3=right.
@@ -219,7 +219,7 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
-    {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu | cliphist decode | wl-copy")},
+    {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu -l 10 | cliphist decode | wl-copy")},
 
     // utilities
     {MODKEY, XKB_KEY_BackSpace, spawn, {.v = (const char *[]){"sysact", NULL}}},
@@ -330,6 +330,8 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_comma, tagmon, {.i = WLR_DIRECTION_LEFT}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_period, tagmon, {.i = WLR_DIRECTION_RIGHT}},
     TAGKEYS(XKB_KEY_1, XKB_KEY_exclam, 0),
     TAGKEYS(XKB_KEY_2, XKB_KEY_quotedbl, 1),
     TAGKEYS(XKB_KEY_3, XKB_KEY_section, 2),
