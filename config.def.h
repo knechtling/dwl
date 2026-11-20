@@ -201,7 +201,7 @@ static const char *const statuscmds[][3] = {
     [0x07 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 7: disk used */
     [0x08 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 8: disk perc */
     [0x09 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 9: temp */
-    [0x0a - 1] = {TERMINAL " -e pulsemixer", NULL, "pavucontrol"},    /* 10: volume */
+    [0x0c - 1] = {TERMINAL " -e pulsemixer", NULL, "pavucontrol"},    /* 12: volume (0x0a is newline) */
     [0x0b - 1] = {NULL, NULL, NULL},                                 /* 11: datetime */
 };
 

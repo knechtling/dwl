@@ -421,6 +421,7 @@ static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, uint32_t newtags);
 static void setpsel(struct wl_listener *listener, void *data);
 static void setsel(struct wl_listener *listener, void *data);
+static void setstextdraw(void);
 static void setup(void);
 static void spawn(const Arg *arg);
 static void spawnscratch(const Arg *arg);
@@ -533,7 +534,8 @@ static struct zdwl_ipc_output_v2_interface dwl_output_implementation = {
 	.set_client_tags = dwl_ipc_output_set_client_tags,
 };
 
-static char stext[256];
+static char stext[256];     /* raw status incl. statuscmd marker bytes */
+static char stextdraw[256]; /* same without markers: drawn and measured */
 static struct wl_event_source *status_event_source;
 static unsigned int statussig;
 
@@ -882,7 +884,7 @@ buttonpress(struct wl_listener *listener, void *data)
 				while (cx >= tx && ++ti < tray_n_items);
 				click = ClkTray;
 				arg.ui = ti;
-			} else if (cx > selmon->b.width - (TEXTW(selmon, stext) - selmon->lrpad + 2 + traywidth)) {
+			} else if (cx > selmon->b.width - (TEXTW(selmon, stextdraw) - selmon->lrpad + 2 + traywidth)) {
 				click = ClkStatus;
 				/* Determine which status module was clicked by walking stext.
 				 * Signal bytes 0x01-0x1E mark module boundaries; the byte
@@ -891,7 +893,7 @@ buttonpress(struct wl_listener *listener, void *data)
 					char buf[sizeof(stext)];
 					const char *p = stext;
 					double sx = selmon->b.width
-					    - (drwl_font_getwidth(selmon->drw, stext) + 2 + traywidth);
+					    - (drwl_font_getwidth(selmon->drw, stextdraw) + 2 + traywidth);
 					unsigned int sig = 0;
 					statussig = 0;
 					while (*p) {
@@ -1916,8 +1918,8 @@ drawbar(Monitor *m)
 	/* draw status first so it can be overdrawn by tags later */
 	if (m == selmon) { /* status is only drawn on selected monitor */
 		drwl_setscheme(m->drw, colors[SchemeNorm]);
-		tw = TEXTW(m, stext) - m->lrpad + 2; /* 2px right padding */
-		drwl_text(m->drw, m->b.width - (tw + traywidth), 0, tw, m->b.height, 0, stext, 0);
+		tw = TEXTW(m, stextdraw) - m->lrpad + 2; /* 2px right padding */
+		drwl_text(m->drw, m->b.width - (tw + traywidth), 0, tw, m->b.height, 0, stextdraw, 0);
 	}
 
 	wl_list_for_each(c, &clients, link) {
@@ -3611,9 +3613,24 @@ statusin(int fd, unsigned int mask, void *data)
 	status[strcspn(status, "\n")] = '\0';
 
 	strncpy(stext, status, sizeof(stext));
+	setstextdraw();
 	drawbars();
 
 	return 0;
+}
+
+/* Copy stext without the statuscmd marker bytes (0x01-0x1E), which the
+ * font would render as boxes and which would skew the measured width. */
+void
+setstextdraw(void)
+{
+	const unsigned char *p = (const unsigned char *)stext;
+	char *d = stextdraw;
+
+	for (; *p && d < stextdraw + sizeof(stextdraw) - 1; p++)
+		if (*p > 30)
+			*d++ = (char)*p;
+	*d = '\0';
 }
 
 void
@@ -3941,6 +3958,7 @@ updatemons(struct wl_listener *listener, void *data)
 
 	if (stext[0] == '\0')
 		strncpy(stext, "dwl-"VERSION, sizeof(stext));
+	setstextdraw();
 	wl_list_for_each(m, &mons, link) {
 		updatebar(m);
 		drawbar(m);
