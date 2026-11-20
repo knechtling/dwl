@@ -534,8 +534,8 @@ static struct zdwl_ipc_output_v2_interface dwl_output_implementation = {
 	.set_client_tags = dwl_ipc_output_set_client_tags,
 };
 
-static char stext[256];     /* raw status incl. statuscmd marker bytes */
-static char stextdraw[256]; /* same without markers: drawn and measured */
+static char stext[512];     /* raw status incl. statuscmd marker bytes */
+static char stextdraw[512]; /* same without markers: drawn and measured */
 static struct wl_event_source *status_event_source;
 static unsigned int statussig;
 
@@ -3597,7 +3597,7 @@ startdrag(struct wl_listener *listener, void *data)
 int
 statusin(int fd, unsigned int mask, void *data)
 {
-	char status[1024];
+	char status[1024], *line, *end;
 	ssize_t n;
 
 	if (mask & WL_EVENT_ERROR)
@@ -3606,13 +3606,19 @@ statusin(int fd, unsigned int mask, void *data)
 		wl_event_source_remove(status_event_source);
 
 	n = read(fd, status, sizeof(status) - 1);
-	if (n < 0 && errno != EWOULDBLOCK)
+	if (n < 0 && errno != EWOULDBLOCK && errno != EINTR)
 		die("read:");
-
+	if (n <= 0)
+		return 0;
 	status[n] = '\0';
-	status[strcspn(status, "\n")] = '\0';
 
-	strncpy(stext, status, sizeof(stext));
+	/* Several lines may be queued if we were busy: show the newest
+	 * complete one, not the oldest. */
+	while (n > 0 && status[n - 1] == '\n')
+		status[--n] = '\0';
+	line = (end = strrchr(status, '\n')) ? end + 1 : status;
+
+	snprintf(stext, sizeof(stext), "%.*s", (int)sizeof(stext) - 1, line);
 	setstextdraw();
 	drawbars();
 
