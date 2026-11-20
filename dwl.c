@@ -1991,6 +1991,9 @@ trayactivate(const Arg *arg)
 void
 traymenu(const Arg *arg)
 {
+	/* open the menu right under the bar, whatever its height */
+	menu_yoffset = topbar && selmon->scene_buffer->node.enabled
+		? selmon->b.height : 0;
 	tray_rightclicked(selmon->tray, arg->ui, dmenucmd);
 }
 

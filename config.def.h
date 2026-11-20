@@ -21,18 +21,20 @@ static const unsigned int systrayspacing = 2; /* systray spacing */
 static const int showsystray             = 1; /* 0 means no systray */
 static const int showbar                 = 1; /* 0 means no bar */
 static const int topbar                  = 1; /* 0 means bottom bar */
-static const char *fonts[]               = {"monospace:size=10"};
-static const float rootcolor[]           = COLOR(0x000000ff);
+static const char *fonts[]               = {"JetBrainsMono Nerd Font:size=11",
+                                            "Noto Color Emoji:size=11"};
+static const float rootcolor[]           = COLOR(0x1a1b26ff);
 
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old
  * behavior */
-static const float fullscreen_bg[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* You can also use glsl colors */
+static const float fullscreen_bg[] = COLOR(0x16161eff);
 
 static uint32_t colors[][3] = {
     /*               fg          bg          border    */
-    [SchemeNorm] = {0xbbbbbbff, 0x222222ff, 0x444444ff},
-    [SchemeSel]  = {0xeeeeeeff, 0x005577ff, 0x0066ccff},
-    [SchemeUrg]  = {0, 0, 0x770000ff},
+    /* Tokyo Night (same as kitty, tmux, nvim) */
+    [SchemeNorm] = {0xa9b1d6ff, 0x1a1b26ff, 0x292e42ff},
+    [SchemeSel]  = {0xc0caf5ff, 0x283457ff, 0x7aa2f7ff},
+    [SchemeUrg]  = {0x1a1b26ff, 0xf7768eff, 0xf7768eff},
 };
 
 #define TAGCOUNT (9)

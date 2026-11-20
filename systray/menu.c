@@ -292,10 +292,12 @@ widest_label(struct wl_array *layout_node)
  * For rofi, size the window to the widest entry so long labels stay
  * readable while short menus stay narrow. Only called in the child.
  */
+int menu_yoffset = 0;
+
 static const char **
 menu_argv(const char **menucmd, struct wl_array *layout_node)
 {
-	static char width[64];
+	static char width[128];
 	const char *prog = strrchr(menucmd[0], '/');
 	const char **argv;
 	int n = 0, chars;
@@ -314,8 +316,13 @@ menu_argv(const char **menucmd, struct wl_array *layout_node)
 	if (chars < 16)
 		chars = 16;
 	/* + element padding, scrollbar and border */
-	snprintf(width, sizeof(width), "window {width: calc( %dch + 56px );}",
-	         chars);
+	if (menu_yoffset > 0)
+		snprintf(width, sizeof(width),
+		         "window {width: calc( %dch + 56px ); y-offset: %dpx;}",
+		         chars, menu_yoffset);
+	else
+		snprintf(width, sizeof(width),
+		         "window {width: calc( %dch + 56px );}", chars);
 	argv[n] = "-theme-str";
 	argv[n + 1] = width;
 

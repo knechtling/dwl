@@ -8,6 +8,9 @@
 /* The menu is built on demand and not kept around */
 void menu_show (DBusConnection *conn, struct wl_event_loop *loop,
                 const char *busname, const char *busobj, const char **menucmd);
+/* Pixels below the top edge where the rofi menu should open (bar height);
+ * set by dwl before showing a menu, 0 keeps the theme's y-offset. */
+extern int menu_yoffset;
 pid_t menu_get_pid (void);
 void menu_close (void);
 
