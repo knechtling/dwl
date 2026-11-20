@@ -1,7 +1,6 @@
 // Constants
 #define TERMINAL "kitty"
 #define BROWSER "firefox"
-#define MUSICPLAYER "feishin"
 #define EMAILCLIENT "thunderbird"
 
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
@@ -61,7 +60,7 @@ static const Rule rules[] = {
     {"Gimp_EXAMPLE", NULL, 0, 1, -1, 0}, /* Start on currently visible tags
                                             floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     {NULL, "scratchpad", 0, 1, -1, 's'},
-    {NULL, "Bitwarden", 0, 1, -1, 'p'},  {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {NULL, "Bitwarden", 0, 1, -1, 0},  {NULL, "scratchnet", 0, 1, -1, 'n'},
     {"nm-connection-editor", NULL, 0, 1, -1, 0},
     {"blueman-manager", NULL, 0, 1, -1, 0},
     {"pavucontrol", NULL, 0, 1, -1, 0},
@@ -207,7 +206,6 @@ static const char *const statuscmds[][3] = {
 
 /* named scratchpads - First arg only serves to match against key in rules*/
 static const char *scratchpadcmd[]  = {"s", TERMINAL, "-T", "scratchpad", NULL};
-static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
 static const char *scratchnetcmd[]  = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
 static const char *screenshotcmd[]  = {"screenshot.sh", NULL};
 
@@ -219,7 +217,6 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_d, spawn, {.v = menucmd}},
     {MODKEY, XKB_KEY_Return, spawn, {.v = termcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Return, togglescratch, {.v = scratchpadcmd}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_P, togglescratch, {.v = scratchpasscmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_N, spawn, {.v = (const char *[]){"nm-menu", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_V, spawn, SHCMD("nm-menu vpn")},
@@ -253,19 +250,14 @@ static const Key keys[] = {
      {.v = (const char *[]){"dmenurecord", NULL}}},
     {MODKEY, XKB_KEY_F4, spawn, SHCMD(TERMINAL " -e pulsemixer")},
     {MODKEY, XKB_KEY_F7, spawn, {.v = (const char *[]){"dmenuunicode", NULL}}},
-    {MODKEY, XKB_KEY_i, spawn, {.v = (const char *[]){TERMINAL, "-e", "pkg-install", NULL}}},
-    {MODKEY | WLR_MODIFIER_SHIFT,
-     XKB_KEY_R,
-     spawn,
-     {.v = (const char *[]){TERMINAL, "-e", "pkg-remove", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_C, spawn, SHCMD("gtk-launch whatsapp-web")},
-    {MODKEY, XKB_KEY_F1, spawn, {.v = (const char *[]){"j4-dmenu-desktop", NULL}}},
 
     {MODKEY, XKB_KEY_plus, spawn, SHCMD("swayosd-client --output-volume +5")},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_plus, spawn, SHCMD("swayosd-client --output-volume +15")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_asterisk, spawn, SHCMD("swayosd-client --output-volume +15")},
+    {MODKEY, XKB_KEY_minus, spawn, SHCMD("swayosd-client --output-volume -5")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_underscore, spawn, SHCMD("swayosd-client --output-volume -15")},
 
     {MODKEY, XKB_KEY_w, spawn, {.v = (const char *[]){BROWSER, NULL}}},
-    {MODKEY, XKB_KEY_z, spawn, {.v = (const char *[]){MUSICPLAYER, NULL}}},
     {MODKEY, XKB_KEY_e, spawn, {.v = (const char *[]){EMAILCLIENT, NULL}}},
     {MODKEY, XKB_KEY_r, spawn, {.v = (const char *[]){TERMINAL, "-e", "lfub", NULL}}},
     {MODKEY | WLR_MODIFIER_SHIFT,
@@ -317,10 +309,12 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_g, togglegaps, {0}},
     {MODKEY, XKB_KEY_q, killclient, {0}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_F, togglefloating, {0}},
+    {MODKEY, XKB_KEY_f, togglefullscreen, {0}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_S, togglesticky, {0}},
 
     // layouts
     {MODKEY, XKB_KEY_t, setlayout, {.v = &layouts[0]}},
-    {MODKEY, XKB_KEY_f, setlayout, {.v = &layouts[1]}},
+    {MODKEY | WLR_MODIFIER_ALT, XKB_KEY_f, setlayout, {.v = &layouts[1]}},
     {MODKEY, XKB_KEY_m, setlayout, {.v = &layouts[2]}},
 
     // menus
@@ -334,11 +328,7 @@ static const Key keys[] = {
     {MODKEY, XKB_KEY_comma, focusmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY, XKB_KEY_period, focusmon, {.i = WLR_DIRECTION_RIGHT}},
     {MODKEY, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
-    {MODKEY, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_less, tagmon, {.i = WLR_DIRECTION_LEFT}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_greater, tagmon, {.i = WLR_DIRECTION_RIGHT}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_comma, tagmon, {.i = WLR_DIRECTION_LEFT}},
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_period, tagmon, {.i = WLR_DIRECTION_RIGHT}},
     TAGKEYS(XKB_KEY_1, XKB_KEY_exclam, 0),
     TAGKEYS(XKB_KEY_2, XKB_KEY_quotedbl, 1),
     TAGKEYS(XKB_KEY_3, XKB_KEY_section, 2),
