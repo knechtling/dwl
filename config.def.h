@@ -222,7 +222,7 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_V, spawn, SHCMD("nm-menu vpn")},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_B, spawn, {.v = (const char *[]){"bt-menu", NULL}}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
-    {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
+    {MODKEY, XKB_KEY_a, spawn, {.v = (const char *[]){"wlr-which-key", NULL}}},
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu -l 10 | cliphist decode | wl-copy")},
 
     // utilities
