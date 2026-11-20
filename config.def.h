@@ -67,6 +67,11 @@ static const Rule rules[] = {
     {"blueman-manager", NULL, 0, 1, -1, 0},
     {"pavucontrol", NULL, 0, 1, -1, 0},
     {"org.pulseaudio.pavucontrol", NULL, 0, 1, -1, 0},
+    /* fixed tags (substring match on app_id; check with Mod+o) */
+    {"firefox", NULL, 1 << 1, 0, -1, 0},         /* 2 */
+    {"element-desktop", NULL, 1 << 7, 0, -1, 0}, /* 8: Electron app_id is */
+    {"Element", NULL, 1 << 7, 0, -1, 0},         /*    one of these two  */
+    {"thunderbird", NULL, 1 << 8, 0, -1, 0},     /* 9 */
 };
 
 /* layout(s) */
