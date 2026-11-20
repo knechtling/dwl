@@ -62,6 +62,10 @@ static const Rule rules[] = {
                                             floating, not tiled */
     {NULL, "floating", 0, 1, -1, 0},     {NULL, "scratchpad", 0, 1, -1, 's'},
     {NULL, "Bitwarden", 0, 1, -1, 'p'},  {NULL, "scratchnet", 0, 1, -1, 'n'},
+    {"nm-connection-editor", NULL, 0, 1, -1, 0},
+    {"blueman-manager", NULL, 0, 1, -1, 0},
+    {"pavucontrol", NULL, 0, 1, -1, 0},
+    {"org.pulseaudio.pavucontrol", NULL, 0, 1, -1, 0},
 };
 
 /* layout(s) */
@@ -188,16 +192,16 @@ static const char *dmenucmd[] = {"rofi", "-dmenu", "-theme", "traymenu", NULL};
  * Signal numbers match the \x01-\x0B prefixes in slstatus config.h. */
 static const char *const statuscmds[][3] = {
     /* signal  left-click                           middle  right */
-    [0x01 - 1] = {"/home/anton/.local/bin/dmenurecord", NULL, NULL}, /* 1: recording */
-    [0x02 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 2: net rx */
-    [0x03 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 3: net tx */
-    [0x04 - 1] = {TERMINAL " -e nmtui", NULL, NULL},                 /* 4: ipv4 */
+    [0x01 - 1] = {"dmenurecord", NULL, NULL},                         /* 1: recording */
+    [0x02 - 1] = {"nm-menu", "bt-menu", "nm-connection-editor"},      /* 2: net rx */
+    [0x03 - 1] = {"nm-menu", "bt-menu", "nm-connection-editor"},      /* 3: net tx */
+    [0x04 - 1] = {"nm-menu vpn", "bt-menu", "nm-connection-editor"},  /* 4: ipv4 */
     [0x05 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 5: cpu */
     [0x06 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 6: ram */
     [0x07 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 7: disk used */
     [0x08 - 1] = {TERMINAL " -e lf", NULL, NULL},                    /* 8: disk perc */
     [0x09 - 1] = {TERMINAL " -e btop", NULL, NULL},                  /* 9: temp */
-    [0x0a - 1] = {TERMINAL " -e pulsemixer", NULL, NULL},            /* 10: volume */
+    [0x0a - 1] = {TERMINAL " -e pulsemixer", NULL, "pavucontrol"},    /* 10: volume */
     [0x0b - 1] = {NULL, NULL, NULL},                                 /* 11: datetime */
 };
 
@@ -205,7 +209,7 @@ static const char *const statuscmds[][3] = {
 static const char *scratchpadcmd[]  = {"s", TERMINAL, "-T", "scratchpad", NULL};
 static const char *scratchpasscmd[] = {"p", "bitwarden-desktop", NULL};
 static const char *scratchnetcmd[]  = {"n", TERMINAL, "-T", "scratchnet", "-e", "nmtui", NULL};
-static const char *screenshotcmd[]  = {"/home/anton/.local/bin/screenshot.sh", NULL};
+static const char *screenshotcmd[]  = {"screenshot.sh", NULL};
 
 static const Key keys[] = {
     /* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -217,6 +221,9 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Return, togglescratch, {.v = scratchpadcmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_P, togglescratch, {.v = scratchpasscmd}},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_W, togglescratch, {.v = scratchnetcmd}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_N, spawn, {.v = (const char *[]){"nm-menu", NULL}}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_V, spawn, SHCMD("nm-menu vpn")},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_B, spawn, {.v = (const char *[]){"bt-menu", NULL}}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
     {0, XKB_KEY_Control_R, spawn, SHCMD("wlr-which-key")},
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu -l 10 | cliphist decode | wl-copy")},
