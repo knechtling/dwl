@@ -224,7 +224,8 @@ static const Key keys[] = {
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_V, spawn, SHCMD("nm-menu vpn")},
     {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_B, spawn, {.v = (const char *[]){"bt-menu", NULL}}},
     {MODKEY, XKB_KEY_b, togglebar, {0}},
-    {MODKEY, XKB_KEY_a, spawn, {.v = (const char *[]){"wlr-which-key", NULL}}},
+    /* second Mod+a closes the menu again */
+    {MODKEY, XKB_KEY_a, spawn, SHCMD("pkill -x wlr-which-key || exec wlr-which-key")},
     {MODKEY, XKB_KEY_c, spawn, SHCMD("cliphist list | wmenu -l 10 | cliphist decode | wl-copy")},
 
     // utilities
@@ -340,7 +341,7 @@ static const Key keys[] = {
     TAGKEYS(XKB_KEY_7, XKB_KEY_slash, 6),
     TAGKEYS(XKB_KEY_8, XKB_KEY_parenleft, 7),
     TAGKEYS(XKB_KEY_9, XKB_KEY_parenright, 8),
-    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Q, quit, {0}},
+    {MODKEY | WLR_MODIFIER_SHIFT, XKB_KEY_Q, spawn, {.v = (const char *[]){"dwl-quit", NULL}}},
 
     /* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
     {WLR_MODIFIER_CTRL | WLR_MODIFIER_ALT, XKB_KEY_Terminate_Server, quit, {0}},
