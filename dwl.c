@@ -3932,6 +3932,10 @@ updatemons(struct wl_listener *listener, void *data)
 			wlr_session_lock_surface_v1_configure(m->lock_surface, m->m.width, m->m.height);
 		}
 
+		/* Re-enable the bar before computing the usable area: on hotplug the
+		 * output may have been disabled when createmon() ran, which left the
+		 * bar node disabled, and clients would cover it. */
+		updatebar(m);
 		/* Calculate the effective monitor geometry to use for clients */
 		arrangelayers(m);
 		/* Don't move clients to the left output when plugging monitors */
